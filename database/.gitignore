@@ -1,0 +1,14 @@
+/vendor/
+/node_modules/
+.env
+.env.*
+*.log
+*.sqlite
+*.sqlite3
+/storage/*.key
+/public/storage
+/.idea/
+/.vscode/
+Homestead.json
+Homestead.yaml
+*.code-workspace
