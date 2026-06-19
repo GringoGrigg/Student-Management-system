@@ -10,7 +10,8 @@
                 <h4 class="mb-0">✏️ Edit Student</h4>
             </div>
             <div class="card-body">
-                <form action="{{ route('students.update', $student) }}" method="POST">
+                {{-- IMPORTANT: Add enctype for file upload --}}
+                <form action="{{ route('students.update', $student) }}" method="POST" enctype="multipart/form-data">
                     @csrf
                     @method('PUT')
 
@@ -129,6 +130,31 @@
                                 <div class="invalid-feedback">{{ $message }}</div>
                             @enderror
                         </div>
+                    </div>
+
+                    {{-- PHOTO SECTION --}}
+                    <div class="mb-3">
+                        <label for="photo" class="form-label">Profile Photo</label>
+                        @if($student->photo)
+                            <div class="mb-2">
+                                <img src="{{ $student->photo_url }}" 
+                                     alt="Current Photo" 
+                                     style="max-width: 100px; max-height: 100px; object-fit: cover; border-radius: 50%;">
+                                <br>
+                                <small class="text-muted">Current photo</small>
+                            </div>
+                        @endif
+                        <input type="file" 
+                               class="form-control @error('photo') is-invalid @enderror" 
+                               id="photo" 
+                               name="photo" 
+                               accept="image/*">
+                        <small class="text-muted">
+                            <i class="bi bi-info-circle"></i> Max size: 2MB. Leave empty to keep current photo
+                        </small>
+                        @error('photo')
+                            <div class="invalid-feedback">{{ $message }}</div>
+                        @enderror
                     </div>
 
                     <div class="d-flex justify-content-between">

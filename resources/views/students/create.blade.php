@@ -10,7 +10,8 @@
                 <h4 class="mb-0">➕ Add New Student</h4>
             </div>
             <div class="card-body">
-                <form action="{{ route('students.store') }}" method="POST">
+                {{-- IMPORTANT: Add enctype="multipart/form-data" for file uploads --}}
+                <form action="{{ route('students.store') }}" method="POST" enctype="multipart/form-data">
                     @csrf
 
                     <div class="row">
@@ -128,6 +129,22 @@
                                 <div class="invalid-feedback">{{ $message }}</div>
                             @enderror
                         </div>
+                    </div>
+
+                    {{-- PHOTO UPLOAD FIELD --}}
+                    <div class="mb-3">
+                        <label for="photo" class="form-label">Profile Photo</label>
+                        <input type="file" 
+                               class="form-control @error('photo') is-invalid @enderror" 
+                               id="photo" 
+                               name="photo" 
+                               accept="image/*">
+                        <small class="text-muted">
+                            <i class="bi bi-info-circle"></i> Max size: 2MB. Allowed: jpeg, png, jpg, gif
+                        </small>
+                        @error('photo')
+                            <div class="invalid-feedback">{{ $message }}</div>
+                        @enderror
                     </div>
 
                     <div class="d-flex justify-content-between">
