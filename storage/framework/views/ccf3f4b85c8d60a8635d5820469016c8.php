@@ -1,45 +1,25 @@
-{{-- ============================================
-     LOGIN PAGE
-     ============================================
-     Purpose: Custom login page with separate 
-     Admin and Student login sections
-     
-     Features:
-     - Admin login section (with special styling)
-     - Student login section (with different styling)
-     - Role-based access control
-     - Beautiful UI with icons
-     - Responsive design
-     ============================================ --}}
+<?php $__env->startSection('title', 'Login'); ?>
 
-@extends('layouts.guest')
-
-@section('title', 'Login')
-
-@section('content')
+<?php $__env->startSection('content'); ?>
 <div class="container">
     <div class="row justify-content-center align-items-center min-vh-100">
         <div class="col-md-10 col-lg-8">
-            {{-- Main Card Container --}}
+            
             <div class="card shadow-lg border-0">
                 <div class="card-header text-center py-4">
-                    {{-- Logo/Header Section --}}
+                    
                     <h1 class="display-5 fw-bold mb-2">🎓 Student Management System</h1>
                     <p class="text-muted">Login to access your dashboard</p>
                 </div>
                 
                 <div class="card-body p-4 p-md-5">
-                    {{-- ============================================
-                         TWO-COLUMN LAYOUT FOR ADMIN & STUDENT
-                         ============================================ --}}
+                    
                     <div class="row g-4">
                         
-                        {{-- ============================================
-                             ADMIN LOGIN SECTION (Left Column)
-                             ============================================ --}}
+                        
                         <div class="col-md-6">
                             <div class="login-section admin-section p-4 rounded-3 h-100">
-                                {{-- Admin Header --}}
+                                
                                 <div class="text-center mb-4">
                                     <div class="admin-icon mb-3">
                                         <i class="bi bi-shield-lock-fill" style="font-size: 3rem; color: #e74c3c;"></i>
@@ -49,14 +29,14 @@
                                     <span class="badge bg-danger">Restricted Access</span>
                                 </div>
                                 
-                                {{-- Admin Login Form --}}
-                                <form method="POST" action="{{ route('login') }}">
-                                    @csrf
+                                
+                                <form method="POST" action="<?php echo e(route('login')); ?>">
+                                    <?php echo csrf_field(); ?>
                                     
-                                    {{-- Hidden role field for admin --}}
+                                    
                                     <input type="hidden" name="role" value="admin">
                                     
-                                    {{-- Email Field --}}
+                                    
                                     <div class="mb-3">
                                         <label for="admin-email" class="form-label fw-semibold">
                                             <i class="bi bi-envelope"></i> Email Address
@@ -67,21 +47,36 @@
                                             </span>
                                             <input id="admin-email" 
                                                    type="email" 
-                                                   class="form-control @error('email') is-invalid @enderror" 
+                                                   class="form-control <?php $__errorArgs = ['email'];
+$__bag = $errors->getBag($__errorArgs[1] ?? 'default');
+if ($__bag->has($__errorArgs[0])) :
+if (isset($message)) { $__messageOriginal = $message; }
+$message = $__bag->first($__errorArgs[0]); ?> is-invalid <?php unset($message);
+if (isset($__messageOriginal)) { $message = $__messageOriginal; }
+endif;
+unset($__errorArgs, $__bag); ?>" 
                                                    name="email" 
-                                                   value="{{ old('email') }}" 
+                                                   value="<?php echo e(old('email')); ?>" 
                                                    placeholder="admin@example.com"
                                                    required 
                                                    autofocus>
                                         </div>
-                                        @error('email')
+                                        <?php $__errorArgs = ['email'];
+$__bag = $errors->getBag($__errorArgs[1] ?? 'default');
+if ($__bag->has($__errorArgs[0])) :
+if (isset($message)) { $__messageOriginal = $message; }
+$message = $__bag->first($__errorArgs[0]); ?>
                                             <div class="invalid-feedback d-block">
-                                                <i class="bi bi-exclamation-circle"></i> {{ $message }}
+                                                <i class="bi bi-exclamation-circle"></i> <?php echo e($message); ?>
+
                                             </div>
-                                        @enderror
+                                        <?php unset($message);
+if (isset($__messageOriginal)) { $message = $__messageOriginal; }
+endif;
+unset($__errorArgs, $__bag); ?>
                                     </div>
                                     
-                                    {{-- Password Field --}}
+                                    
                                     <div class="mb-3">
                                         <label for="admin-password" class="form-label fw-semibold">
                                             <i class="bi bi-lock"></i> Password
@@ -92,38 +87,53 @@
                                             </span>
                                             <input id="admin-password" 
                                                    type="password" 
-                                                   class="form-control @error('password') is-invalid @enderror" 
+                                                   class="form-control <?php $__errorArgs = ['password'];
+$__bag = $errors->getBag($__errorArgs[1] ?? 'default');
+if ($__bag->has($__errorArgs[0])) :
+if (isset($message)) { $__messageOriginal = $message; }
+$message = $__bag->first($__errorArgs[0]); ?> is-invalid <?php unset($message);
+if (isset($__messageOriginal)) { $message = $__messageOriginal; }
+endif;
+unset($__errorArgs, $__bag); ?>" 
                                                    name="password" 
                                                    placeholder="Enter your password"
                                                    required>
                                         </div>
-                                        @error('password')
+                                        <?php $__errorArgs = ['password'];
+$__bag = $errors->getBag($__errorArgs[1] ?? 'default');
+if ($__bag->has($__errorArgs[0])) :
+if (isset($message)) { $__messageOriginal = $message; }
+$message = $__bag->first($__errorArgs[0]); ?>
                                             <div class="invalid-feedback d-block">
-                                                <i class="bi bi-exclamation-circle"></i> {{ $message }}
+                                                <i class="bi bi-exclamation-circle"></i> <?php echo e($message); ?>
+
                                             </div>
-                                        @enderror
+                                        <?php unset($message);
+if (isset($__messageOriginal)) { $message = $__messageOriginal; }
+endif;
+unset($__errorArgs, $__bag); ?>
                                     </div>
                                     
-                                    {{-- Remember Me --}}
+                                    
                                     <div class="mb-3 form-check">
                                         <input class="form-check-input" 
                                                type="checkbox" 
                                                name="remember" 
                                                id="admin-remember" 
-                                               {{ old('remember') ? 'checked' : '' }}>
+                                               <?php echo e(old('remember') ? 'checked' : ''); ?>>
                                         <label class="form-check-label" for="admin-remember">
                                             Remember me
                                         </label>
                                     </div>
                                     
-                                    {{-- Admin Login Button --}}
+                                    
                                     <div class="d-grid gap-2">
                                         <button type="submit" class="btn btn-danger btn-lg fw-bold">
                                             <i class="bi bi-shield-check"></i> Login as Admin
                                         </button>
                                     </div>
                                     
-                                    {{-- Admin Help Text --}}
+                                    
                                     <div class="text-center mt-3">
                                         <small class="text-muted">
                                             <i class="bi bi-info-circle"></i> 
@@ -134,12 +144,10 @@
                             </div>
                         </div>
                         
-                        {{-- ============================================
-                             STUDENT LOGIN SECTION (Right Column)
-                             ============================================ --}}
+                        
                         <div class="col-md-6">
                             <div class="login-section student-section p-4 rounded-3 h-100">
-                                {{-- Student Header --}}
+                                
                                 <div class="text-center mb-4">
                                     <div class="student-icon mb-3">
                                         <i class="bi bi-mortarboard-fill" style="font-size: 3rem; color: #3498db;"></i>
@@ -149,14 +157,14 @@
                                     <span class="badge bg-primary">General Access</span>
                                 </div>
                                 
-                                {{-- Student Login Form --}}
-                                <form method="POST" action="{{ route('login') }}">
-                                    @csrf
+                                
+                                <form method="POST" action="<?php echo e(route('login')); ?>">
+                                    <?php echo csrf_field(); ?>
                                     
-                                    {{-- Hidden role field for student --}}
+                                    
                                     <input type="hidden" name="role" value="student">
                                     
-                                    {{-- Email Field --}}
+                                    
                                     <div class="mb-3">
                                         <label for="student-email" class="form-label fw-semibold">
                                             <i class="bi bi-envelope"></i> Email Address
@@ -167,20 +175,35 @@
                                             </span>
                                             <input id="student-email" 
                                                    type="email" 
-                                                   class="form-control @error('email') is-invalid @enderror" 
+                                                   class="form-control <?php $__errorArgs = ['email'];
+$__bag = $errors->getBag($__errorArgs[1] ?? 'default');
+if ($__bag->has($__errorArgs[0])) :
+if (isset($message)) { $__messageOriginal = $message; }
+$message = $__bag->first($__errorArgs[0]); ?> is-invalid <?php unset($message);
+if (isset($__messageOriginal)) { $message = $__messageOriginal; }
+endif;
+unset($__errorArgs, $__bag); ?>" 
                                                    name="email" 
-                                                   value="{{ old('email') }}" 
+                                                   value="<?php echo e(old('email')); ?>" 
                                                    placeholder="student@example.com"
                                                    required>
                                         </div>
-                                        @error('email')
+                                        <?php $__errorArgs = ['email'];
+$__bag = $errors->getBag($__errorArgs[1] ?? 'default');
+if ($__bag->has($__errorArgs[0])) :
+if (isset($message)) { $__messageOriginal = $message; }
+$message = $__bag->first($__errorArgs[0]); ?>
                                             <div class="invalid-feedback d-block">
-                                                <i class="bi bi-exclamation-circle"></i> {{ $message }}
+                                                <i class="bi bi-exclamation-circle"></i> <?php echo e($message); ?>
+
                                             </div>
-                                        @enderror
+                                        <?php unset($message);
+if (isset($__messageOriginal)) { $message = $__messageOriginal; }
+endif;
+unset($__errorArgs, $__bag); ?>
                                     </div>
                                     
-                                    {{-- Password Field --}}
+                                    
                                     <div class="mb-3">
                                         <label for="student-password" class="form-label fw-semibold">
                                             <i class="bi bi-lock"></i> Password
@@ -191,38 +214,53 @@
                                             </span>
                                             <input id="student-password" 
                                                    type="password" 
-                                                   class="form-control @error('password') is-invalid @enderror" 
+                                                   class="form-control <?php $__errorArgs = ['password'];
+$__bag = $errors->getBag($__errorArgs[1] ?? 'default');
+if ($__bag->has($__errorArgs[0])) :
+if (isset($message)) { $__messageOriginal = $message; }
+$message = $__bag->first($__errorArgs[0]); ?> is-invalid <?php unset($message);
+if (isset($__messageOriginal)) { $message = $__messageOriginal; }
+endif;
+unset($__errorArgs, $__bag); ?>" 
                                                    name="password" 
                                                    placeholder="Enter your password"
                                                    required>
                                         </div>
-                                        @error('password')
+                                        <?php $__errorArgs = ['password'];
+$__bag = $errors->getBag($__errorArgs[1] ?? 'default');
+if ($__bag->has($__errorArgs[0])) :
+if (isset($message)) { $__messageOriginal = $message; }
+$message = $__bag->first($__errorArgs[0]); ?>
                                             <div class="invalid-feedback d-block">
-                                                <i class="bi bi-exclamation-circle"></i> {{ $message }}
+                                                <i class="bi bi-exclamation-circle"></i> <?php echo e($message); ?>
+
                                             </div>
-                                        @enderror
+                                        <?php unset($message);
+if (isset($__messageOriginal)) { $message = $__messageOriginal; }
+endif;
+unset($__errorArgs, $__bag); ?>
                                     </div>
                                     
-                                    {{-- Remember Me --}}
+                                    
                                     <div class="mb-3 form-check">
                                         <input class="form-check-input" 
                                                type="checkbox" 
                                                name="remember" 
                                                id="student-remember" 
-                                               {{ old('remember') ? 'checked' : '' }}>
+                                               <?php echo e(old('remember') ? 'checked' : ''); ?>>
                                         <label class="form-check-label" for="student-remember">
                                             Remember me
                                         </label>
                                     </div>
                                     
-                                    {{-- Student Login Button --}}
+                                    
                                     <div class="d-grid gap-2">
                                         <button type="submit" class="btn btn-primary btn-lg fw-bold">
                                             <i class="bi bi-box-arrow-in-right"></i> Login as Student
                                         </button>
                                     </div>
                                     
-                                    {{-- Student Help Text --}}
+                                    
                                     <div class="text-center mt-3">
                                         <small class="text-muted">
                                             <i class="bi bi-info-circle"></i> 
@@ -230,11 +268,11 @@
                                         </small>
                                     </div>
                                     
-                                    {{-- Register Link for Students --}}
+                                    
                                     <div class="text-center mt-3">
                                         <small>
                                             Don't have an account? 
-                                            <a href="{{ route('register') }}" class="text-primary fw-bold">
+                                            <a href="<?php echo e(route('register')); ?>" class="text-primary fw-bold">
                                                 Register here
                                             </a>
                                         </small>
@@ -244,20 +282,19 @@
                         </div>
                     </div>
                     
-                    {{-- ============================================
-                         FORGOT PASSWORD LINK (Bottom)
-                         ============================================ --}}
+                    
                     <div class="text-center mt-4 pt-3 border-top">
-                        @if (Route::has('password.request'))
-                            <a href="{{ route('password.request') }}" class="text-decoration-none text-muted">
+                        <?php if(Route::has('password.request')): ?>
+                            <a href="<?php echo e(route('password.request')); ?>" class="text-decoration-none text-muted">
                                 <i class="bi bi-key"></i> Forgot your password?
                             </a>
-                        @endif
+                        <?php endif; ?>
                         
-                        {{-- Version info --}}
+                        
                         <p class="text-muted small mt-2">
                             <i class="bi bi-shield-check"></i> Secure Login • 
-                            Laravel {{ Illuminate\Foundation\Application::VERSION }}
+                            Laravel <?php echo e(Illuminate\Foundation\Application::VERSION); ?>
+
                         </p>
                     </div>
                 </div>
@@ -266,10 +303,8 @@
     </div>
 </div>
 
-{{-- ============================================
-     CUSTOM STYLES FOR THIS PAGE
-     ============================================ --}}
-@push('styles')
+
+<?php $__env->startPush('styles'); ?>
 <style>
     /* ==========================================
        PAGE BACKGROUND
@@ -470,4 +505,5 @@
         animation: fadeInUp 0.6s ease-out;
     }
 </style>
-@endpush
+<?php $__env->stopPush(); ?>
+<?php echo $__env->make('layouts.guest', array_diff_key(get_defined_vars(), ['__data' => 1, '__path' => 1]))->render(); ?><?php /**PATH C:\xampp\htdocs\student-management-system\resources\views/auth/login.blade.php ENDPATH**/ ?>

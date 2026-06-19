@@ -1,5 +1,13 @@
 <?php
 
+// ============================================
+// MODEL: Student
+// ============================================
+// Purpose: Represents a student in the system
+// Handles student data, relationships, and business logic
+// Now linked to User model for role-based access
+// ============================================
+
 namespace App\Models;
 
 use Illuminate\Database\Eloquent\Factories\HasFactory;
@@ -11,7 +19,7 @@ class Student extends Model
     // ===== TRAITS =====
     // HasFactory: Allows using factories for testing/database seeding
     // SoftDeletes: Adds soft delete capability (deleted_at column)
-    use HasFactory, SoftDeletes; // 👈 ADD SoftDeletes here
+    use HasFactory, SoftDeletes;
 
     // ===== MASS ASSIGNMENT PROTECTION =====
     // These fields can be filled using create() or update() methods
@@ -25,7 +33,8 @@ class Student extends Model
         'date_of_birth',   // Date of birth
         'course',          // Course name
         'status',          // Active, Inactive, or Graduated
-        'photo',           // 👈 ADD THIS for profile photo filename
+        'photo',           // Profile photo filename
+        'user_id',         // 👈 ADDED: Links student to User account for role-based access
     ];
 
     // ===== DATE CASTING =====
@@ -35,23 +44,65 @@ class Student extends Model
         'date_of_birth' => 'date',      // Converts to Carbon date object
         'created_at' => 'datetime',     // Converts to Carbon datetime object
         'updated_at' => 'datetime',     // Converts to Carbon datetime object
-        'deleted_at' => 'datetime',     // 👈 ADD THIS for soft delete timestamp
+        'deleted_at' => 'datetime',     // Converts to Carbon datetime object for soft delete
     ];
 
-    // ===== ACCESSOR (GETTER) =====
-    // This creates a virtual property: $student->full_name
-    // Example: If first_name = "John" and last_name = "Doe"
-    // Then $student->full_name returns "John Doe"
-    // Use: {{ $student->full_name }}
+    // ============================================
+    // RELATIONSHIPS
+    // ============================================
+    // These define how the Student model relates to other models
+    // ============================================
+
+    /**
+     * Get the user that owns the student record.
+     * 
+     * Relationship: Student belongs to User (Inverse One-to-One)
+     * 
+     * This is used for role-based access control:
+     * - Each student record belongs to a user account
+     * - Students can only access their own record
+     * - Admins can access all records
+     * 
+     * Usage: $student->user (returns the User model)
+     */
+    public function user()
+    {
+        // belongsTo() means this model has a foreign key 'user_id'
+        // that references the 'id' column in the 'users' table
+        return $this->belongsTo(User::class);
+    }
+
+    // ============================================
+    // ACCESSORS (GETTERS)
+    // ============================================
+    // These create virtual properties that can be accessed like attributes
+    // ============================================
+
+    /**
+     * Get the full name of the student.
+     * 
+     * Accessor: $student->full_name
+     * 
+     * Example: If first_name = "John" and last_name = "Doe"
+     * Then $student->full_name returns "John Doe"
+     * 
+     * Usage: {{ $student->full_name }}
+     */
     public function getFullNameAttribute()
     {
         return $this->first_name . ' ' . $this->last_name;
     }
 
-    // ===== ACCESSOR FOR PHOTO URL =====
-    // This creates a virtual property: $student->photo_url
-    // Returns the full URL to the student's profile photo
-    // Use: {{ $student->photo_url }}
+    /**
+     * Get the photo URL for the student.
+     * 
+     * Accessor: $student->photo_url
+     * 
+     * Returns the full URL to the student's profile photo
+     * If no photo exists, generates an avatar from the student's name
+     * 
+     * Usage: {{ $student->photo_url }}
+     */
     public function getPhotoUrlAttribute()
     {
         // Check if student has a photo
@@ -67,50 +118,87 @@ class Student extends Model
         return 'https://ui-avatars.com/api/?name=' . urlencode($this->full_name) . '&size=100';
     }
 
-    // ===== ACCESSOR FOR AGE =====
-    // Creates virtual property: $student->age
-    // Calculates age based on date_of_birth
-    // Use: {{ $student->age }} years old
+    /**
+     * Get the age of the student.
+     * 
+     * Accessor: $student->age
+     * 
+     * Calculates age based on date_of_birth
+     * 
+     * Usage: {{ $student->age }} years old
+     */
     public function getAgeAttribute()
     {
         // Carbon's diffInYears() calculates the difference in years from now
         return $this->date_of_birth->age; // Carbon automatically handles this
     }
 
-    // ===== ACCESSOR FOR FORMATTED DATE OF BIRTH =====
-    // Creates virtual property: $student->formatted_dob
-    // Use: {{ $student->formatted_dob }}
+    /**
+     * Get the formatted date of birth.
+     * 
+     * Accessor: $student->formatted_dob
+     * 
+     * Formats the date as "January 15, 2000"
+     * 
+     * Usage: {{ $student->formatted_dob }}
+     */
     public function getFormattedDobAttribute()
     {
         // Format the date as "January 15, 2000"
         return $this->date_of_birth->format('F d, Y');
     }
 
-    // ===== SCOPE FOR ACTIVE STUDENTS =====
-    // Allows: Student::active()->get()
-    // This creates a reusable query constraint
+    // ============================================
+    // SCOPES (QUERY BUILDERS)
+    // ============================================
+    // These create reusable query constraints
+    // ============================================
+
+    /**
+     * Scope for active students.
+     * 
+     * Allows: Student::active()->get()
+     * 
+     * Usage: $activeStudents = Student::active()->get();
+     */
     public function scopeActive($query)
     {
         return $query->where('status', 'Active');
     }
 
-    // ===== SCOPE FOR INACTIVE STUDENTS =====
-    // Allows: Student::inactive()->get()
+    /**
+     * Scope for inactive students.
+     * 
+     * Allows: Student::inactive()->get()
+     * 
+     * Usage: $inactiveStudents = Student::inactive()->get();
+     */
     public function scopeInactive($query)
     {
         return $query->where('status', 'Inactive');
     }
 
-    // ===== SCOPE FOR GRADUATED STUDENTS =====
-    // Allows: Student::graduated()->get()
+    /**
+     * Scope for graduated students.
+     * 
+     * Allows: Student::graduated()->get()
+     * 
+     * Usage: $graduatedStudents = Student::graduated()->get();
+     */
     public function scopeGraduated($query)
     {
         return $query->where('status', 'Graduated');
     }
 
-    // ===== SCOPE FOR SEARCH =====
-    // Allows: Student::search('John')->get()
-    // Reusable search functionality
+    /**
+     * Scope for searching students.
+     * 
+     * Allows: Student::search('John')->get()
+     * 
+     * Searches in: first_name, last_name, email
+     * 
+     * Usage: $results = Student::search('John')->get();
+     */
     public function scopeSearch($query, $term)
     {
         return $query->where(function($q) use ($term) {
@@ -120,17 +208,72 @@ class Student extends Model
         });
     }
 
-    // ===== BOOT METHOD =====
+    /**
+     * Scope for students belonging to a specific user.
+     * 
+     * Allows: Student::forUser($userId)->get()
+     * 
+     * Used to get students linked to a specific user account
+     * 
+     * Usage: $students = Student::forUser(1)->get();
+     */
+    public function scopeForUser($query, $userId)
+    {
+        return $query->where('user_id', $userId);
+    }
+
+    // ============================================
+    // BOOT METHOD
+    // ============================================
     // This runs automatically when the model is instantiated
     // You can add global behaviors here
+    // ============================================
+
+    /**
+     * The "booted" method of the model.
+     * 
+     * This runs when the model is first loaded
+     * Used to register event listeners and global scopes
+     */
     protected static function boot()
     {
         parent::boot();
 
-        // Example: Automatically uppercase first letter of names before saving
+        /**
+         * Saving Event Listener
+         * 
+         * This runs every time a student is saved (created or updated)
+         * Automatically capitalizes the first letter of names
+         * Ensures consistent formatting in the database
+         */
         static::saving(function ($student) {
+            // Capitalize first letter of first name
             $student->first_name = ucfirst(strtolower($student->first_name));
+            
+            // Capitalize first letter of last name
             $student->last_name = ucfirst(strtolower($student->last_name));
+        });
+
+        /**
+         * Creating Event Listener
+         * 
+         * This runs only when a student is first created
+         * Can be used to set default values or perform actions on creation
+         */
+        static::creating(function ($student) {
+            // If no user_id is set, you could set a default
+            // or perform other actions on creation
+        });
+
+        /**
+         * Deleting Event Listener
+         * 
+         * This runs when a student is deleted (soft delete)
+         * Can be used to perform cleanup actions
+         */
+        static::deleting(function ($student) {
+            // If you need to do something when a student is deleted
+            // For example: delete associated files, log the action, etc.
         });
     }
 }

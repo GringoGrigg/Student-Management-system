@@ -1,18 +1,68 @@
 <?php
 
+// ============================================
+// CONTROLLER: StudentController
+// ============================================
+// Purpose: Handles all student-related operations
+// Includes CRUD, search, filter, pagination, soft delete
+// Now with role-based access control:
+// - Admin: Full access to all students
+// - Student: Only their own profile (view and edit)
+// ============================================
+
 namespace App\Http\Controllers;
 
 use App\Models\Student;
 use Illuminate\Http\Request;
-use Illuminate\Support\Facades\Storage; // For handling file storage operations
+use Illuminate\Support\Facades\Auth; // 👈 ADDED: For role checking
+use Illuminate\Support\Facades\Storage;
 
 class StudentController extends Controller
 {
     /**
-     * Display a listing of students with search, filter, and pagination
+     * Display a listing of students with search, filter, and pagination.
+     * 
+     * ADMIN: Shows all students with search/filter/pagination
+     * STUDENT: Redirects to their own profile
+     * 
+     * URL: GET /students
+     * Access: Requires authentication
      */
-    public function index(Request $request) // Added $request parameter for search/filter
+    public function index(Request $request)
     {
+        // ============================================
+        // ROLE-BASED ACCESS CONTROL
+        // ============================================
+        // Get the currently authenticated user
+        // ============================================
+        $user = Auth::user();
+
+        // ============================================
+        // CHECK: If user is a student
+        // ============================================
+        // Students cannot view the student list
+        // They can only see their own profile
+        // ============================================
+        if ($user->isStudent()) {
+            // Check if student has a linked student record
+            if ($user->student) {
+                // Redirect student to their own profile
+                return redirect()->route('students.show', $user->student->id)
+                    ->with('info', 'You can only view your own profile.');
+            } else {
+                // No student profile found - logout and redirect to login
+                Auth::logout();
+                return redirect()->route('login')
+                    ->with('error', 'No student profile found. Please contact admin.');
+            }
+        }
+
+        // ============================================
+        // ADMIN ACCESS: Full student list
+        // ============================================
+        // Only admins can view all students
+        // ============================================
+
         // Start building the database query
         $query = Student::query();
         
@@ -62,21 +112,56 @@ class StudentController extends Controller
     }
 
     /**
-     * Show the form for creating a new student
+     * Show the form for creating a new student.
+     * 
+     * ADMIN ONLY: Students cannot create new student records
+     * 
+     * URL: GET /students/create
+     * Access: Requires authentication (admin only)
      */
     public function create()
     {
-        // Simply return the create view with the form
-        // No database interaction needed here
+        // ============================================
+        // ROLE-BASED ACCESS CONTROL
+        // ============================================
+        // Only admins can create new students
+        // ============================================
+        $user = Auth::user();
+        
+        if ($user->isStudent()) {
+            return redirect()->route('dashboard')
+                ->with('error', 'Students cannot create new student records.');
+        }
+
+        // Admin can access the create form
         return view('students.create');
     }
 
     /**
-     * Store a newly created student in the database with image upload
+     * Store a newly created student in the database.
+     * 
+     * ADMIN ONLY: Students cannot create new student records
+     * 
+     * URL: POST /students
+     * Access: Requires authentication (admin only)
      */
     public function store(Request $request)
     {
-        // ===== VALIDATION RULES =====
+        // ============================================
+        // ROLE-BASED ACCESS CONTROL
+        // ============================================
+        // Only admins can store new students
+        // ============================================
+        $user = Auth::user();
+        
+        if ($user->isStudent()) {
+            return redirect()->route('dashboard')
+                ->with('error', 'Students cannot create new student records.');
+        }
+
+        // ============================================
+        // VALIDATION RULES
+        // ============================================
         // 'required' - field must be present
         // 'string' - must be text
         // 'max:100' - maximum 100 characters
@@ -96,7 +181,7 @@ class StudentController extends Controller
             'date_of_birth' => 'required|date',
             'course' => 'required|string|max:150',
             'status' => 'required|in:Active,Inactive,Graduated',
-            'photo' => 'nullable|image|mimes:jpeg,png,jpg,gif|max:2048', // New photo validation
+            'photo' => 'nullable|image|mimes:jpeg,png,jpg,gif|max:2048',
         ]);
 
         // Get all validated data
@@ -133,33 +218,122 @@ class StudentController extends Controller
     }
 
     /**
-     * Display the specified student's details
+     * Display the specified student's details.
+     * 
+     * ADMIN: Can view any student
+     * STUDENT: Can only view their own profile
+     * 
+     * URL: GET /students/{id}
+     * Access: Requires authentication
      */
     public function show(Student $student)
     {
-        // ===== ROUTE MODEL BINDING =====
-        // Laravel automatically finds the student by {student} ID from the URL
-        // If not found, it returns a 404 error automatically
-        // Pass the student to the show view
+        // ============================================
+        // ROLE-BASED ACCESS CONTROL
+        // ============================================
+        // Get the current user
+        // ============================================
+        $user = Auth::user();
+
+        // ============================================
+        // CHECK: If user is a student
+        // ============================================
+        // Students can only view their own profile
+        // Check if the student being viewed belongs to the current user
+        // ============================================
+        if ($user->isStudent()) {
+            // Check if the student record belongs to this user
+            if ($user->student && $user->student->id === $student->id) {
+                // Student is viewing their own profile - allowed
+                return view('students.show', compact('student'));
+            } else {
+                // Student is trying to view another student's profile - denied
+                return redirect()->route('dashboard')
+                    ->with('error', 'You can only view your own profile.');
+            }
+        }
+
+        // ============================================
+        // ADMIN ACCESS: Can view any student
+        // ============================================
         return view('students.show', compact('student'));
     }
 
     /**
-     * Show the form for editing the specified student
+     * Show the form for editing a student.
+     * 
+     * ADMIN: Can edit any student
+     * STUDENT: Can only edit their own profile
+     * 
+     * URL: GET /students/{id}/edit
+     * Access: Requires authentication
      */
     public function edit(Student $student)
     {
-        // Same as show() - uses Route Model Binding
-        // Returns the edit form with existing student data pre-filled
+        // ============================================
+        // ROLE-BASED ACCESS CONTROL
+        // ============================================
+        // Get the current user
+        // ============================================
+        $user = Auth::user();
+
+        // ============================================
+        // CHECK: If user is a student
+        // ============================================
+        // Students can only edit their own profile
+        // ============================================
+        if ($user->isStudent()) {
+            // Check if the student record belongs to this user
+            if (!$user->student || $user->student->id !== $student->id) {
+                // Student is trying to edit another student's profile - denied
+                return redirect()->route('dashboard')
+                    ->with('error', 'You can only edit your own profile.');
+            }
+            // Student can edit their own profile
+            return view('students.edit', compact('student'));
+        }
+
+        // ============================================
+        // ADMIN ACCESS: Can edit any student
+        // ============================================
         return view('students.edit', compact('student'));
     }
 
     /**
-     * Update the specified student in the database with image upload
+     * Update the specified student in the database.
+     * 
+     * ADMIN: Can update any student
+     * STUDENT: Can only update their own profile
+     * 
+     * URL: PUT/PATCH /students/{id}
+     * Access: Requires authentication
      */
     public function update(Request $request, Student $student)
     {
-        // ===== VALIDATION RULES =====
+        // ============================================
+        // ROLE-BASED ACCESS CONTROL
+        // ============================================
+        // Get the current user
+        // ============================================
+        $user = Auth::user();
+
+        // ============================================
+        // CHECK: If user is a student
+        // ============================================
+        // Students can only update their own profile
+        // ============================================
+        if ($user->isStudent()) {
+            // Check if the student record belongs to this user
+            if (!$user->student || $user->student->id !== $student->id) {
+                // Student is trying to update another student's profile - denied
+                return redirect()->route('dashboard')
+                    ->with('error', 'You can only update your own profile.');
+            }
+        }
+
+        // ============================================
+        // VALIDATION RULES
+        // ============================================
         // Special email rule: 'unique:students,email,' . $student->id
         // This means: "email must be unique, but ignore this student's own email"
         // This allows students to keep their existing email
@@ -206,16 +380,44 @@ class StudentController extends Controller
         // Only updates fields in $fillable
         $student->update($data);
 
-        // Redirect back to list with success message
+        // ============================================
+        // ROLE-BASED REDIRECTION
+        // ============================================
+        // Redirect based on user role
+        // ============================================
+        if ($user->isStudent()) {
+            // Student: Redirect back to their own profile with success message
+            return redirect()->route('students.show', $student->id)
+                ->with('success', 'Your profile has been updated successfully!');
+        }
+
+        // Admin: Redirect to student list with success message
         return redirect()->route('students.index')
             ->with('success', 'Student updated successfully!');
     }
 
     /**
-     * Remove the specified student from the database (Soft Delete)
+     * Remove the specified student from the database (Soft Delete).
+     * 
+     * ADMIN ONLY: Students cannot delete student records
+     * 
+     * URL: DELETE /students/{id}
+     * Access: Requires authentication (admin only)
      */
     public function destroy(Student $student)
     {
+        // ============================================
+        // ROLE-BASED ACCESS CONTROL
+        // ============================================
+        // Only admins can delete students
+        // ============================================
+        $user = Auth::user();
+        
+        if ($user->isStudent()) {
+            return redirect()->route('dashboard')
+                ->with('error', 'Students cannot delete student records.');
+        }
+
         // ===== SOFT DELETE =====
         // 'delete()' with SoftDeletes trait will set 'deleted_at' timestamp
         // The record is NOT permanently removed from the database
@@ -226,13 +428,34 @@ class StudentController extends Controller
             ->with('success', 'Student deleted successfully!');
     }
 
-    // ===== BONUS: SOFT DELETE RESTORE FEATURE =====
+    // ============================================
+    // BONUS: SOFT DELETE RESTORE FEATURES
+    // ============================================
+    // These are admin-only features
+    // ============================================
     
     /**
-     * Display all soft-deleted (trashed) students
+     * Display all soft-deleted (trashed) students.
+     * 
+     * ADMIN ONLY: Students cannot access trash
+     * 
+     * URL: GET /students/trashed
+     * Access: Requires authentication (admin only)
      */
     public function trashed()
     {
+        // ============================================
+        // ROLE-BASED ACCESS CONTROL
+        // ============================================
+        // Only admins can view trashed students
+        // ============================================
+        $user = Auth::user();
+        
+        if ($user->isStudent()) {
+            return redirect()->route('dashboard')
+                ->with('error', 'Students cannot access trash.');
+        }
+
         // ===== ONLY TRASHED STUDENTS =====
         // 'onlyTrashed()' retrieves only records where 'deleted_at' is NOT NULL
         // These are students that have been soft-deleted
@@ -243,10 +466,27 @@ class StudentController extends Controller
     }
 
     /**
-     * Restore a soft-deleted student
+     * Restore a soft-deleted student.
+     * 
+     * ADMIN ONLY: Students cannot restore students
+     * 
+     * URL: PATCH /students/{id}/restore
+     * Access: Requires authentication (admin only)
      */
     public function restore($id)
     {
+        // ============================================
+        // ROLE-BASED ACCESS CONTROL
+        // ============================================
+        // Only admins can restore students
+        // ============================================
+        $user = Auth::user();
+        
+        if ($user->isStudent()) {
+            return redirect()->route('dashboard')
+                ->with('error', 'Students cannot restore student records.');
+        }
+
         // ===== FIND AND RESTORE =====
         // 'onlyTrashed()' finds the record even though it's soft-deleted
         // 'findOrFail()' throws 404 if student not found
@@ -262,11 +502,27 @@ class StudentController extends Controller
     }
 
     /**
-     * Permanently delete a student (Force Delete)
-     * Note: This is optional and not included in the basic flow
+     * Permanently delete a student (Force Delete).
+     * 
+     * ADMIN ONLY: Students cannot permanently delete students
+     * 
+     * URL: DELETE /students/{id}/force-delete
+     * Access: Requires authentication (admin only)
      */
     public function forceDelete($id)
     {
+        // ============================================
+        // ROLE-BASED ACCESS CONTROL
+        // ============================================
+        // Only admins can force delete students
+        // ============================================
+        $user = Auth::user();
+        
+        if ($user->isStudent()) {
+            return redirect()->route('dashboard')
+                ->with('error', 'Students cannot permanently delete student records.');
+        }
+
         // Find the trashed student
         $student = Student::onlyTrashed()->findOrFail($id);
         

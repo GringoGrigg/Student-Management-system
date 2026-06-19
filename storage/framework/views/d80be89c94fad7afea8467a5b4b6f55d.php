@@ -1,11 +1,11 @@
 <!DOCTYPE html>
-<html lang="{{ str_replace('_', '-', app()->getLocale()) }}">
+<html lang="<?php echo e(str_replace('_', '-', app()->getLocale())); ?>">
 <head>
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1">
-    <meta name="csrf-token" content="{{ csrf_token() }}">
+    <meta name="csrf-token" content="<?php echo e(csrf_token()); ?>">
     
-    <title>@yield('title', 'Student Management System')</title>
+    <title><?php echo $__env->yieldContent('title', 'Student Management System'); ?></title>
     
     <!-- Bootstrap CSS -->
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
@@ -302,7 +302,7 @@
         <nav class="navbar navbar-expand-lg navbar-custom">
             <div class="container-fluid">
                 <!-- Brand/Logo -->
-                <a class="navbar-brand" href="{{ route('dashboard') }}">
+                <a class="navbar-brand" href="<?php echo e(route('dashboard')); ?>">
                     🎓 Student Management System
                 </a>
                 
@@ -319,40 +319,40 @@
                         AUTHENTICATED USER NAVIGATION
                         Shows when user is logged in
                         ========================================== -->
-                        @auth
+                        <?php if(auth()->guard()->check()): ?>
                             
                             <!-- ==========================================
                             ADMIN NAVIGATION LINKS
                             Only visible to admin users
                             ========================================== -->
-                            @if(Auth::user()->isAdmin())
+                            <?php if(Auth::user()->isAdmin()): ?>
                                 <!-- Dashboard Link -->
                                 <li class="nav-item">
-                                    <a class="nav-link {{ request()->routeIs('dashboard') ? 'active' : '' }}" 
-                                       href="{{ route('dashboard') }}">
+                                    <a class="nav-link <?php echo e(request()->routeIs('dashboard') ? 'active' : ''); ?>" 
+                                       href="<?php echo e(route('dashboard')); ?>">
                                         <i class="bi bi-speedometer2"></i> Dashboard
                                     </a>
                                 </li>
                                 
                                 <!-- Students List Link -->
                                 <li class="nav-item">
-                                    <a class="nav-link {{ request()->routeIs('students.index') ? 'active' : '' }}" 
-                                       href="{{ route('students.index') }}">
+                                    <a class="nav-link <?php echo e(request()->routeIs('students.index') ? 'active' : ''); ?>" 
+                                       href="<?php echo e(route('students.index')); ?>">
                                         <i class="bi bi-list-ul"></i> Students
                                     </a>
                                 </li>
                                 
                                 <!-- Trash Link -->
                                 <li class="nav-item">
-                                    <a class="nav-link {{ request()->routeIs('students.trashed') ? 'active' : '' }}" 
-                                       href="{{ route('students.trashed') }}">
+                                    <a class="nav-link <?php echo e(request()->routeIs('students.trashed') ? 'active' : ''); ?>" 
+                                       href="<?php echo e(route('students.trashed')); ?>">
                                         <i class="bi bi-trash"></i> Trash
                                     </a>
                                 </li>
                                 
                                 <!-- Add Student Link -->
                                 <li class="nav-item">
-                                    <a class="nav-link" href="{{ route('students.create') }}">
+                                    <a class="nav-link" href="<?php echo e(route('students.create')); ?>">
                                         <i class="bi bi-plus-circle"></i> Add Student
                                     </a>
                                 </li>
@@ -361,17 +361,17 @@
                             STUDENT NAVIGATION LINKS
                             Only visible to student users
                             ========================================== -->
-                            @else
+                            <?php else: ?>
                                 <!-- My Profile Link -->
-                                @if(Auth::user()->student)
+                                <?php if(Auth::user()->student): ?>
                                     <li class="nav-item">
-                                        <a class="nav-link {{ request()->routeIs('students.show') ? 'active' : '' }}" 
-                                           href="{{ route('students.show', Auth::user()->student->id) }}">
+                                        <a class="nav-link <?php echo e(request()->routeIs('students.show') ? 'active' : ''); ?>" 
+                                           href="<?php echo e(route('students.show', Auth::user()->student->id)); ?>">
                                             <i class="bi bi-person-circle"></i> My Profile
                                         </a>
                                     </li>
-                                @endif
-                            @endif
+                                <?php endif; ?>
+                            <?php endif; ?>
                             
                             <!-- ==========================================
                             USER DROPDOWN WITH LOGOUT
@@ -380,18 +380,19 @@
                             <li class="nav-item dropdown">
                                 <a class="nav-link dropdown-toggle" href="#" id="navbarDropdown" role="button" data-bs-toggle="dropdown">
                                     <i class="bi bi-person-circle"></i> 
-                                    {{ Auth::user()->name }}
+                                    <?php echo e(Auth::user()->name); ?>
+
                                     
                                     <!-- Role Badge with Icon -->
-                                    @if(Auth::user()->isAdmin())
+                                    <?php if(Auth::user()->isAdmin()): ?>
                                         <span class="badge badge-admin">
                                             <i class="bi bi-shield-fill-check"></i> Admin
                                         </span>
-                                    @else
+                                    <?php else: ?>
                                         <span class="badge badge-student">
                                             <i class="bi bi-mortarboard-fill"></i> Student
                                         </span>
-                                    @endif
+                                    <?php endif; ?>
                                     
                                     <!-- Online Status Indicator (Green Dot) -->
                                     <span class="online-indicator ms-1"></span>
@@ -399,31 +400,31 @@
                                 
                                 <ul class="dropdown-menu dropdown-menu-end">
                                     <!-- Dashboard Link (Admin) -->
-                                    @if(Auth::user()->isAdmin())
+                                    <?php if(Auth::user()->isAdmin()): ?>
                                         <li>
-                                            <a class="dropdown-item" href="{{ route('dashboard') }}">
+                                            <a class="dropdown-item" href="<?php echo e(route('dashboard')); ?>">
                                                 <i class="bi bi-speedometer2"></i> Dashboard
                                             </a>
                                         </li>
-                                    @endif
+                                    <?php endif; ?>
                                     
                                     <!-- My Profile Link (Student) -->
-                                    @if(Auth::user()->isStudent() && Auth::user()->student)
+                                    <?php if(Auth::user()->isStudent() && Auth::user()->student): ?>
                                         <li>
-                                            <a class="dropdown-item" href="{{ route('students.show', Auth::user()->student->id) }}">
+                                            <a class="dropdown-item" href="<?php echo e(route('students.show', Auth::user()->student->id)); ?>">
                                                 <i class="bi bi-person"></i> My Profile
                                             </a>
                                         </li>
-                                    @endif
+                                    <?php endif; ?>
                                     
                                     <!-- Admin can also access student list from dropdown -->
-                                    @if(Auth::user()->isAdmin())
+                                    <?php if(Auth::user()->isAdmin()): ?>
                                         <li>
-                                            <a class="dropdown-item" href="{{ route('students.index') }}">
+                                            <a class="dropdown-item" href="<?php echo e(route('students.index')); ?>">
                                                 <i class="bi bi-list-ul"></i> All Students
                                             </a>
                                         </li>
-                                    @endif
+                                    <?php endif; ?>
                                     
                                     <li><hr class="dropdown-divider"></li>
                                     
@@ -431,8 +432,8 @@
                                     LOGOUT BUTTON
                                     ========================================== -->
                                     <li>
-                                        <form method="POST" action="{{ route('logout') }}">
-                                            @csrf
+                                        <form method="POST" action="<?php echo e(route('logout')); ?>">
+                                            <?php echo csrf_field(); ?>
                                             <button type="submit" class="dropdown-item text-danger">
                                                 <i class="bi bi-box-arrow-right"></i> Logout
                                             </button>
@@ -445,21 +446,21 @@
                         GUEST NAVIGATION (Not Logged In)
                         Shows when user is NOT authenticated
                         ========================================== -->
-                        @else
+                        <?php else: ?>
                             <!-- Login Link -->
                             <li class="nav-item">
-                                <a class="nav-link" href="{{ route('login') }}">
+                                <a class="nav-link" href="<?php echo e(route('login')); ?>">
                                     <i class="bi bi-box-arrow-in-right"></i> Login
                                 </a>
                             </li>
                             
                             <!-- Register Link -->
                             <li class="nav-item">
-                                <a class="nav-link" href="{{ route('register') }}">
+                                <a class="nav-link" href="<?php echo e(route('register')); ?>">
                                     <i class="bi bi-person-plus"></i> Register
                                 </a>
                             </li>
-                        @endauth
+                        <?php endif; ?>
                         
                     </ul>
                 </div>
@@ -470,7 +471,7 @@
         PAGE CONTENT
         Child views will be inserted here
         ========================================== -->
-        @yield('content')
+        <?php echo $__env->yieldContent('content'); ?>
     </div>
     
     <!-- ==========================================
@@ -480,6 +481,6 @@
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
     
     <!-- Additional scripts from child views -->
-    @stack('scripts')
+    <?php echo $__env->yieldPushContent('scripts'); ?>
 </body>
-</html>
+</html><?php /**PATH C:\xampp\htdocs\student-management-system\resources\views/layouts/app.blade.php ENDPATH**/ ?>

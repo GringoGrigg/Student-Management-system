@@ -1,8 +1,8 @@
-@extends('layouts.app')
 
-@section('title', 'Dashboard')
 
-@section('content')
+<?php $__env->startSection('title', 'Dashboard'); ?>
+
+<?php $__env->startSection('content'); ?>
 
 <div class="row">
     <div class="col-md-12 mb-4">
@@ -11,11 +11,12 @@
                 <h4 class="mb-0">📊 Dashboard</h4>
             </div>
             <div class="card-body">
-                <p>Welcome back, <strong>{{ Auth::user()->name }}</strong>!</p>
+                <p>Welcome back, <strong><?php echo e(Auth::user()->name); ?></strong>!</p>
                 <p class="text-muted">
                     Role: 
-                    <span class="badge {{ Auth::user()->role == 'admin' ? 'badge-admin' : 'badge-student' }}">
-                        {{ ucfirst(Auth::user()->role) }}
+                    <span class="badge <?php echo e(Auth::user()->role == 'admin' ? 'badge-admin' : 'badge-student'); ?>">
+                        <?php echo e(ucfirst(Auth::user()->role)); ?>
+
                     </span>
                 </p>
             </div>
@@ -28,7 +29,7 @@
         <div class="card text-white bg-primary">
             <div class="card-body">
                 <h6 class="card-title text-uppercase">Total Students</h6>
-                <h2 class="card-text display-4">{{ $totalStudents ?? 0 }}</h2>
+                <h2 class="card-text display-4"><?php echo e($totalStudents ?? 0); ?></h2>
                 <small>All students in system</small>
             </div>
         </div>
@@ -38,7 +39,7 @@
         <div class="card text-white bg-success">
             <div class="card-body">
                 <h6 class="card-title text-uppercase">Active Students</h6>
-                <h2 class="card-text display-4">{{ $activeStudents ?? 0 }}</h2>
+                <h2 class="card-text display-4"><?php echo e($activeStudents ?? 0); ?></h2>
                 <small>Currently active</small>
             </div>
         </div>
@@ -48,7 +49,7 @@
         <div class="card text-white bg-warning">
             <div class="card-body">
                 <h6 class="card-title text-uppercase">Inactive Students</h6>
-                <h2 class="card-text display-4">{{ $inactiveStudents ?? 0 }}</h2>
+                <h2 class="card-text display-4"><?php echo e($inactiveStudents ?? 0); ?></h2>
                 <small>Currently inactive</small>
             </div>
         </div>
@@ -58,7 +59,7 @@
         <div class="card text-white bg-secondary">
             <div class="card-body">
                 <h6 class="card-title text-uppercase">Graduated</h6>
-                <h2 class="card-text display-4">{{ $graduatedStudents ?? 0 }}</h2>
+                <h2 class="card-text display-4"><?php echo e($graduatedStudents ?? 0); ?></h2>
                 <small>Graduated students</small>
             </div>
         </div>
@@ -70,7 +71,7 @@
         <div class="card text-white bg-info">
             <div class="card-body">
                 <h6 class="card-title text-uppercase">Total Courses</h6>
-                <h2 class="card-text display-4">{{ $totalCourses ?? 0 }}</h2>
+                <h2 class="card-text display-4"><?php echo e($totalCourses ?? 0); ?></h2>
                 <small>Unique courses offered</small>
             </div>
         </div>
@@ -82,7 +83,7 @@
                 <h5 class="mb-0">🆕 Latest 5 Registered Students</h5>
             </div>
             <div class="card-body">
-                @if(isset($latestStudents) && $latestStudents->count() > 0)
+                <?php if(isset($latestStudents) && $latestStudents->count() > 0): ?>
                     <div class="table-responsive">
                         <table class="table table-striped table-hover">
                             <thead>
@@ -95,31 +96,32 @@
                                 </tr>
                             </thead>
                             <tbody>
-                                @foreach($latestStudents as $index => $student)
+                                <?php $__currentLoopData = $latestStudents; $__env->addLoop($__currentLoopData); foreach($__currentLoopData as $index => $student): $__env->incrementLoopIndices(); $loop = $__env->getLastLoop(); ?>
                                     <tr>
-                                        <td>{{ $index + 1 }}</td>
-                                        <td>{{ $student->full_name }}</td>
-                                        <td>{{ $student->email }}</td>
-                                        <td>{{ $student->course }}</td>
+                                        <td><?php echo e($index + 1); ?></td>
+                                        <td><?php echo e($student->full_name); ?></td>
+                                        <td><?php echo e($student->email); ?></td>
+                                        <td><?php echo e($student->course); ?></td>
                                         <td>
-                                            <span class="status-{{ strtolower($student->status) }}">
-                                                {{ $student->status }}
+                                            <span class="status-<?php echo e(strtolower($student->status)); ?>">
+                                                <?php echo e($student->status); ?>
+
                                             </span>
                                         </td>
                                     </tr>
-                                @endforeach
+                                <?php endforeach; $__env->popLoop(); $loop = $__env->getLastLoop(); ?>
                             </tbody>
                         </table>
                     </div>
-                @else
+                <?php else: ?>
                     <p class="text-muted text-center">No students registered yet.</p>
-                @endif
+                <?php endif; ?>
             </div>
         </div>
     </div>
 </div>
 
-@if($isAdmin ?? false)
+<?php if($isAdmin ?? false): ?>
 <div class="row mt-4">
     <div class="col-md-12">
         <div class="card border-primary">
@@ -129,17 +131,17 @@
             <div class="card-body">
                 <div class="row">
                     <div class="col-md-4">
-                        <a href="{{ route('students.index') }}" class="btn btn-primary btn-lg w-100">
+                        <a href="<?php echo e(route('students.index')); ?>" class="btn btn-primary btn-lg w-100">
                             <i class="bi bi-list-ul"></i> Manage Students
                         </a>
                     </div>
                     <div class="col-md-4">
-                        <a href="{{ route('students.trashed') }}" class="btn btn-warning btn-lg w-100 text-white">
+                        <a href="<?php echo e(route('students.trashed')); ?>" class="btn btn-warning btn-lg w-100 text-white">
                             <i class="bi bi-trash"></i> View Trash
                         </a>
                     </div>
                     <div class="col-md-4">
-                        <a href="{{ route('students.create') }}" class="btn btn-success btn-lg w-100">
+                        <a href="<?php echo e(route('students.create')); ?>" class="btn btn-success btn-lg w-100">
                             <i class="bi bi-plus-circle"></i> Add Student
                         </a>
                     </div>
@@ -148,7 +150,7 @@
         </div>
     </div>
 </div>
-@endif
+<?php endif; ?>
 
 <div class="row mt-4">
     <div class="col-md-12">
@@ -157,15 +159,16 @@
                 <small>
                     <i class="bi bi-database"></i> 
                     System Statistics: 
-                    <span class="fw-bold">{{ $totalStudents ?? 0 }}</span> Total Students | 
-                    <span class="fw-bold text-success">{{ $activeStudents ?? 0 }}</span> Active | 
-                    <span class="fw-bold text-warning">{{ $inactiveStudents ?? 0 }}</span> Inactive | 
-                    <span class="fw-bold text-secondary">{{ $graduatedStudents ?? 0 }}</span> Graduated |
-                    <span class="fw-bold text-info">{{ $totalCourses ?? 0 }}</span> Courses
+                    <span class="fw-bold"><?php echo e($totalStudents ?? 0); ?></span> Total Students | 
+                    <span class="fw-bold text-success"><?php echo e($activeStudents ?? 0); ?></span> Active | 
+                    <span class="fw-bold text-warning"><?php echo e($inactiveStudents ?? 0); ?></span> Inactive | 
+                    <span class="fw-bold text-secondary"><?php echo e($graduatedStudents ?? 0); ?></span> Graduated |
+                    <span class="fw-bold text-info"><?php echo e($totalCourses ?? 0); ?></span> Courses
                 </small>
             </div>
         </div>
     </div>
 </div>
 
-@endsection
+<?php $__env->stopSection(); ?>
+<?php echo $__env->make('layouts.app', array_diff_key(get_defined_vars(), ['__data' => 1, '__path' => 1]))->render(); ?><?php /**PATH C:\xampp\htdocs\student-management-system\resources\views/dashboard.blade.php ENDPATH**/ ?>

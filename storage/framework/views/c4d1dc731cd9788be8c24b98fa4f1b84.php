@@ -1,12 +1,6 @@
-{{-- ============================================
-     REGISTER PAGE WITH ROLE SELECTION
-     ============================================ --}}
+<?php $__env->startSection('title', 'Register'); ?>
 
-@extends('layouts.guest')
-
-@section('title', 'Register')
-
-@section('content')
+<?php $__env->startSection('content'); ?>
 <div class="container">
     <div class="row justify-content-center align-items-center min-vh-100">
         <div class="col-md-6 col-lg-5">
@@ -17,10 +11,10 @@
                 </div>
                 
                 <div class="card-body p-4">
-                    <form method="POST" action="{{ route('register') }}">
-                        @csrf
+                    <form method="POST" action="<?php echo e(route('register')); ?>">
+                        <?php echo csrf_field(); ?>
                         
-                        {{-- Name Field --}}
+                        
                         <div class="mb-3">
                             <label for="name" class="form-label fw-semibold">
                                 <i class="bi bi-person"></i> Full Name
@@ -31,20 +25,35 @@
                                 </span>
                                 <input id="name" 
                                        type="text" 
-                                       class="form-control @error('name') is-invalid @enderror" 
+                                       class="form-control <?php $__errorArgs = ['name'];
+$__bag = $errors->getBag($__errorArgs[1] ?? 'default');
+if ($__bag->has($__errorArgs[0])) :
+if (isset($message)) { $__messageOriginal = $message; }
+$message = $__bag->first($__errorArgs[0]); ?> is-invalid <?php unset($message);
+if (isset($__messageOriginal)) { $message = $__messageOriginal; }
+endif;
+unset($__errorArgs, $__bag); ?>" 
                                        name="name" 
-                                       value="{{ old('name') }}" 
+                                       value="<?php echo e(old('name')); ?>" 
                                        placeholder="Enter your full name"
                                        required>
                             </div>
-                            @error('name')
+                            <?php $__errorArgs = ['name'];
+$__bag = $errors->getBag($__errorArgs[1] ?? 'default');
+if ($__bag->has($__errorArgs[0])) :
+if (isset($message)) { $__messageOriginal = $message; }
+$message = $__bag->first($__errorArgs[0]); ?>
                                 <div class="invalid-feedback d-block">
-                                    <i class="bi bi-exclamation-circle"></i> {{ $message }}
+                                    <i class="bi bi-exclamation-circle"></i> <?php echo e($message); ?>
+
                                 </div>
-                            @enderror
+                            <?php unset($message);
+if (isset($__messageOriginal)) { $message = $__messageOriginal; }
+endif;
+unset($__errorArgs, $__bag); ?>
                         </div>
                         
-                        {{-- Email Field --}}
+                        
                         <div class="mb-3">
                             <label for="email" class="form-label fw-semibold">
                                 <i class="bi bi-envelope"></i> Email Address
@@ -55,20 +64,35 @@
                                 </span>
                                 <input id="email" 
                                        type="email" 
-                                       class="form-control @error('email') is-invalid @enderror" 
+                                       class="form-control <?php $__errorArgs = ['email'];
+$__bag = $errors->getBag($__errorArgs[1] ?? 'default');
+if ($__bag->has($__errorArgs[0])) :
+if (isset($message)) { $__messageOriginal = $message; }
+$message = $__bag->first($__errorArgs[0]); ?> is-invalid <?php unset($message);
+if (isset($__messageOriginal)) { $message = $__messageOriginal; }
+endif;
+unset($__errorArgs, $__bag); ?>" 
                                        name="email" 
-                                       value="{{ old('email') }}" 
+                                       value="<?php echo e(old('email')); ?>" 
                                        placeholder="Enter your email"
                                        required>
                             </div>
-                            @error('email')
+                            <?php $__errorArgs = ['email'];
+$__bag = $errors->getBag($__errorArgs[1] ?? 'default');
+if ($__bag->has($__errorArgs[0])) :
+if (isset($message)) { $__messageOriginal = $message; }
+$message = $__bag->first($__errorArgs[0]); ?>
                                 <div class="invalid-feedback d-block">
-                                    <i class="bi bi-exclamation-circle"></i> {{ $message }}
+                                    <i class="bi bi-exclamation-circle"></i> <?php echo e($message); ?>
+
                                 </div>
-                            @enderror
+                            <?php unset($message);
+if (isset($__messageOriginal)) { $message = $__messageOriginal; }
+endif;
+unset($__errorArgs, $__bag); ?>
                         </div>
                         
-                        {{-- Password Field --}}
+                        
                         <div class="mb-3">
                             <label for="password" class="form-label fw-semibold">
                                 <i class="bi bi-lock"></i> Password
@@ -79,20 +103,35 @@
                                 </span>
                                 <input id="password" 
                                        type="password" 
-                                       class="form-control @error('password') is-invalid @enderror" 
+                                       class="form-control <?php $__errorArgs = ['password'];
+$__bag = $errors->getBag($__errorArgs[1] ?? 'default');
+if ($__bag->has($__errorArgs[0])) :
+if (isset($message)) { $__messageOriginal = $message; }
+$message = $__bag->first($__errorArgs[0]); ?> is-invalid <?php unset($message);
+if (isset($__messageOriginal)) { $message = $__messageOriginal; }
+endif;
+unset($__errorArgs, $__bag); ?>" 
                                        name="password" 
                                        placeholder="Enter your password"
                                        required>
                             </div>
-                            @error('password')
+                            <?php $__errorArgs = ['password'];
+$__bag = $errors->getBag($__errorArgs[1] ?? 'default');
+if ($__bag->has($__errorArgs[0])) :
+if (isset($message)) { $__messageOriginal = $message; }
+$message = $__bag->first($__errorArgs[0]); ?>
                                 <div class="invalid-feedback d-block">
-                                    <i class="bi bi-exclamation-circle"></i> {{ $message }}
+                                    <i class="bi bi-exclamation-circle"></i> <?php echo e($message); ?>
+
                                 </div>
-                            @enderror
+                            <?php unset($message);
+if (isset($__messageOriginal)) { $message = $__messageOriginal; }
+endif;
+unset($__errorArgs, $__bag); ?>
                             <small class="text-muted">Minimum 8 characters</small>
                         </div>
                         
-                        {{-- Confirm Password --}}
+                        
                         <div class="mb-3">
                             <label for="password_confirmation" class="form-label fw-semibold">
                                 <i class="bi bi-check-circle"></i> Confirm Password
@@ -110,41 +149,56 @@
                             </div>
                         </div>
                         
-                        {{-- Role Selection --}}
+                        
                         <div class="mb-3">
                             <label for="role" class="form-label fw-semibold">
                                 <i class="bi bi-person-badge"></i> Register as
                             </label>
                             <select id="role" 
                                     name="role" 
-                                    class="form-select @error('role') is-invalid @enderror"
+                                    class="form-select <?php $__errorArgs = ['role'];
+$__bag = $errors->getBag($__errorArgs[1] ?? 'default');
+if ($__bag->has($__errorArgs[0])) :
+if (isset($message)) { $__messageOriginal = $message; }
+$message = $__bag->first($__errorArgs[0]); ?> is-invalid <?php unset($message);
+if (isset($__messageOriginal)) { $message = $__messageOriginal; }
+endif;
+unset($__errorArgs, $__bag); ?>"
                                     required>
                                 <option value="student" selected>🎓 Student</option>
                                 <option value="admin">👑 Admin (Requires Approval)</option>
                             </select>
-                            @error('role')
+                            <?php $__errorArgs = ['role'];
+$__bag = $errors->getBag($__errorArgs[1] ?? 'default');
+if ($__bag->has($__errorArgs[0])) :
+if (isset($message)) { $__messageOriginal = $message; }
+$message = $__bag->first($__errorArgs[0]); ?>
                                 <div class="invalid-feedback d-block">
-                                    <i class="bi bi-exclamation-circle"></i> {{ $message }}
+                                    <i class="bi bi-exclamation-circle"></i> <?php echo e($message); ?>
+
                                 </div>
-                            @enderror
+                            <?php unset($message);
+if (isset($__messageOriginal)) { $message = $__messageOriginal; }
+endif;
+unset($__errorArgs, $__bag); ?>
                             <small class="text-muted">
                                 <i class="bi bi-info-circle"></i> 
                                 Admin accounts require special approval
                             </small>
                         </div>
                         
-                        {{-- Register Button --}}
+                        
                         <div class="d-grid gap-2">
                             <button type="submit" class="btn btn-success btn-lg fw-bold">
                                 <i class="bi bi-person-plus"></i> Create Account
                             </button>
                         </div>
                         
-                        {{-- Login Link --}}
+                        
                         <div class="text-center mt-3">
                             <small>
                                 Already have an account? 
-                                <a href="{{ route('login') }}" class="text-primary fw-bold">
+                                <a href="<?php echo e(route('login')); ?>" class="text-primary fw-bold">
                                     Login here
                                 </a>
                             </small>
@@ -156,7 +210,7 @@
     </div>
 </div>
 
-@push('styles')
+<?php $__env->startPush('styles'); ?>
 <style>
     body {
         background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
@@ -248,4 +302,5 @@
         }
     }
 </style>
-@endpush
+<?php $__env->stopPush(); ?>
+<?php echo $__env->make('layouts.guest', array_diff_key(get_defined_vars(), ['__data' => 1, '__path' => 1]))->render(); ?><?php /**PATH C:\xampp\htdocs\student-management-system\resources\views/auth/register.blade.php ENDPATH**/ ?>
