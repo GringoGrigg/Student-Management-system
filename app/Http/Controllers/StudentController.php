@@ -8,7 +8,7 @@
 // Role-based access control:
 // - Admin: Full access to all students
 // - Student: Only their own profile (view and edit)
-// WORKING IMAGE UPLOAD - No GD/Imagick required
+// IMAGE UPLOAD WITH RESIZE - Makes images visible and optimized
 // ============================================
 
 namespace App\Http\Controllers;
@@ -17,6 +17,8 @@ use App\Models\Student;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Storage;
+use Intervention\Image\ImageManager;
+use Intervention\Image\Drivers\Gd\Driver; // 👈 ADDED: For image resizing
 
 class StudentController extends Controller
 {
@@ -95,13 +97,13 @@ class StudentController extends Controller
     }
 
     /**
-     * Store a newly created student with WORKING image upload.
+     * Store a newly created student with image resize.
      * ADMIN ONLY
      * 
      * URL: POST /students
      * 
-     * NOTE: This uses Laravel's built-in Storage facade.
-     * No GD or Imagick required - works on any PHP installation.
+     * NOTE: Images are automatically resized to 400x400px
+     * This ensures they display properly in profile views
      */
     public function store(Request $request)
     {
@@ -125,29 +127,53 @@ class StudentController extends Controller
             'date_of_birth' => 'required|date',
             'course' => 'required|string|max:150',
             'status' => 'required|in:Active,Inactive,Graduated',
-            'photo' => 'nullable|image|mimes:jpeg,png,jpg,gif,webp|max:2048',
+            'photo' => 'nullable|image|mimes:jpeg,png,jpg,gif,webp|max:5120', // 👈 Increased to 5MB
         ]);
 
         $data = $request->all();
 
         // ============================================
-        // WORKING IMAGE UPLOAD - NO PROCESSING
+        // IMAGE UPLOAD WITH RESIZE
         // ============================================
-        // This uses Laravel's built-in Storage facade
-        // No GD or Imagick required - works on any PHP installation
+        // This resizes images to 400x400px (square)
+        // Perfect for profile photos and thumbnails
+        // Improves loading speed and display quality
         // ============================================
         if ($request->hasFile('photo')) {
             $file = $request->file('photo');
-            
-            // Create unique filename with timestamp
-            // Remove special characters for safety
             $filename = time() . '_' . preg_replace('/[^a-zA-Z0-9.]/', '_', $file->getClientOriginalName());
             
-            // Store the file - this is the simplest working method
-            $file->storeAs('public/student_photos', $filename);
-            
-            // Save filename to database
-            $data['photo'] = $filename;
+            try {
+                // Create image manager with GD driver
+                $manager = new ImageManager(new Driver());
+                
+                // Read the uploaded image
+                $image = $manager->read($file->getPathname());
+                
+                // ============================================
+                // RESIZE TO 400x400 (Square Crop)
+                // ============================================
+                // cover() crops the image to exactly 400x400
+                // Centers the image and maintains aspect ratio
+                // Perfect for profile photos
+                // ============================================
+                $image->cover(400, 400);
+                
+                // Save the resized image with 85% quality
+                $imagePath = storage_path('app/public/student_photos/' . $filename);
+                $image->save($imagePath, 85, 'jpg');
+                
+                $data['photo'] = $filename;
+                
+            } catch (\Exception $e) {
+                // ============================================
+                // FALLBACK: Save original if resize fails
+                // ============================================
+                // This ensures the upload still works
+                $file->storeAs('public/student_photos', $filename);
+                $data['photo'] = $filename;
+                \Log::error('Image resize failed: ' . $e->getMessage());
+            }
         }
 
         // ===== CREATE STUDENT =====
@@ -202,7 +228,7 @@ class StudentController extends Controller
     }
 
     /**
-     * Update the specified student with WORKING image upload.
+     * Update the specified student with image resize.
      * 
      * ADMIN: Can update any student
      * STUDENT: Can only update their own profile
@@ -232,13 +258,13 @@ class StudentController extends Controller
             'date_of_birth' => 'required|date',
             'course' => 'required|string|max:150',
             'status' => 'required|in:Active,Inactive,Graduated',
-            'photo' => 'nullable|image|mimes:jpeg,png,jpg,gif,webp|max:2048',
+            'photo' => 'nullable|image|mimes:jpeg,png,jpg,gif,webp|max:5120', // 👈 Increased to 5MB
         ]);
 
         $data = $request->all();
 
         // ============================================
-        // WORKING IMAGE UPDATE
+        // IMAGE UPDATE WITH RESIZE
         // ============================================
         if ($request->hasFile('photo')) {
             // ===== DELETE OLD PHOTO =====
@@ -249,13 +275,32 @@ class StudentController extends Controller
                 }
             }
             
-            // ===== UPLOAD NEW PHOTO =====
+            // ===== UPLOAD AND RESIZE NEW PHOTO =====
             $file = $request->file('photo');
             $filename = time() . '_' . preg_replace('/[^a-zA-Z0-9.]/', '_', $file->getClientOriginalName());
             
-            // Store the file
-            $file->storeAs('public/student_photos', $filename);
-            $data['photo'] = $filename;
+            try {
+                // Create image manager with GD driver
+                $manager = new ImageManager(new Driver());
+                
+                // Read the uploaded image
+                $image = $manager->read($file->getPathname());
+                
+                // Resize to 400x400 (Square Crop)
+                $image->cover(400, 400);
+                
+                // Save the resized image
+                $imagePath = storage_path('app/public/student_photos/' . $filename);
+                $image->save($imagePath, 85, 'jpg');
+                
+                $data['photo'] = $filename;
+                
+            } catch (\Exception $e) {
+                // FALLBACK: Save original if resize fails
+                $file->storeAs('public/student_photos', $filename);
+                $data['photo'] = $filename;
+                \Log::error('Image resize failed: ' . $e->getMessage());
+            }
         }
 
         // ===== UPDATE STUDENT =====
