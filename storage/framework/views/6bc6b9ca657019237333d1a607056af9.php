@@ -4,6 +4,7 @@
 
 <?php $__env->startSection('content'); ?>
 
+
 <div class="row">
     <div class="col-md-12 mb-4">
         <div class="card">
@@ -23,6 +24,7 @@
         </div>
     </div>
 </div>
+
 
 <div class="row mb-4">
     <div class="col-md-3 mb-3">
@@ -66,9 +68,43 @@
     </div>
 </div>
 
+
+<div class="row mb-4">
+    
+    <div class="col-md-6 mb-3">
+        <div class="card h-100">
+            <div class="card-header">
+                <h5 class="mb-0">📊 Student Status Distribution</h5>
+            </div>
+            <div class="card-body">
+                <div class="chart-container">
+                    <?php echo $pieChart->renderHtml(); ?>
+
+                </div>
+            </div>
+        </div>
+    </div>
+
+    
+    <div class="col-md-6 mb-3">
+        <div class="card h-100">
+            <div class="card-header">
+                <h5 class="mb-0">📊 Students by Course</h5>
+            </div>
+            <div class="card-body">
+                <div class="chart-container">
+                    <?php echo $barChart->renderHtml(); ?>
+
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+
 <div class="row">
     <div class="col-md-4 mb-3">
-        <div class="card text-white bg-info">
+        <div class="card text-white bg-info h-100">
             <div class="card-body">
                 <h6 class="card-title text-uppercase">Total Courses</h6>
                 <h2 class="card-text display-4"><?php echo e($totalCourses ?? 0); ?></h2>
@@ -121,6 +157,7 @@
     </div>
 </div>
 
+
 <?php if($isAdmin ?? false): ?>
 <div class="row mt-4">
     <div class="col-md-12">
@@ -152,6 +189,7 @@
 </div>
 <?php endif; ?>
 
+
 <div class="row mt-4">
     <div class="col-md-12">
         <div class="card">
@@ -171,4 +209,38 @@
 </div>
 
 <?php $__env->stopSection(); ?>
+
+
+<?php $__env->startPush('scripts'); ?>
+    <?php echo $pieChart->renderChartJsLibrary(); ?>
+
+    <?php echo $pieChart->renderJs(); ?>
+
+    <?php echo $barChart->renderJs(); ?>
+
+<?php $__env->stopPush(); ?>
+
+
+<?php $__env->startPush('styles'); ?>
+<style>
+    .chart-container {
+        position: relative;
+        height: 300px;
+        width: 100%;
+        margin: 10px 0;
+    }
+    
+    .chart-container canvas {
+        max-height: 300px;
+        max-width: 100%;
+    }
+    
+    /* Responsive chart adjustments */
+    @media (max-width: 768px) {
+        .chart-container {
+            height: 250px;
+        }
+    }
+</style>
+<?php $__env->stopPush(); ?>
 <?php echo $__env->make('layouts.app', array_diff_key(get_defined_vars(), ['__data' => 1, '__path' => 1]))->render(); ?><?php /**PATH C:\xampp\htdocs\student-management-system\resources\views/dashboard.blade.php ENDPATH**/ ?>

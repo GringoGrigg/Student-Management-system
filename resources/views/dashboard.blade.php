@@ -4,6 +4,9 @@
 
 @section('content')
 
+{{-- ============================================
+     WELCOME SECTION
+     ============================================ --}}
 <div class="row">
     <div class="col-md-12 mb-4">
         <div class="card">
@@ -23,6 +26,9 @@
     </div>
 </div>
 
+{{-- ============================================
+     STATISTICS CARDS - ROW 1
+     ============================================ --}}
 <div class="row mb-4">
     <div class="col-md-3 mb-3">
         <div class="card text-white bg-primary">
@@ -65,9 +71,45 @@
     </div>
 </div>
 
+{{-- ============================================
+     CHARTS SECTION - PIE AND BAR
+     ============================================ --}}
+<div class="row mb-4">
+    {{-- Pie Chart - Student Status Distribution --}}
+    <div class="col-md-6 mb-3">
+        <div class="card h-100">
+            <div class="card-header">
+                <h5 class="mb-0">📊 Student Status Distribution</h5>
+            </div>
+            <div class="card-body">
+                <div class="chart-container">
+                    {!! $pieChart->renderHtml() !!}
+                </div>
+            </div>
+        </div>
+    </div>
+
+    {{-- Bar Chart - Students by Course --}}
+    <div class="col-md-6 mb-3">
+        <div class="card h-100">
+            <div class="card-header">
+                <h5 class="mb-0">📊 Students by Course</h5>
+            </div>
+            <div class="card-body">
+                <div class="chart-container">
+                    {!! $barChart->renderHtml() !!}
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+{{-- ============================================
+     LATEST STUDENTS AND COURSES
+     ============================================ --}}
 <div class="row">
     <div class="col-md-4 mb-3">
-        <div class="card text-white bg-info">
+        <div class="card text-white bg-info h-100">
             <div class="card-body">
                 <h6 class="card-title text-uppercase">Total Courses</h6>
                 <h2 class="card-text display-4">{{ $totalCourses ?? 0 }}</h2>
@@ -119,6 +161,9 @@
     </div>
 </div>
 
+{{-- ============================================
+     ADMIN PANEL
+     ============================================ --}}
 @if($isAdmin ?? false)
 <div class="row mt-4">
     <div class="col-md-12">
@@ -150,6 +195,9 @@
 </div>
 @endif
 
+{{-- ============================================
+     FOOTER STATISTICS
+     ============================================ --}}
 <div class="row mt-4">
     <div class="col-md-12">
         <div class="card">
@@ -169,3 +217,38 @@
 </div>
 
 @endsection
+
+{{-- ============================================
+     CHART.JS SCRIPTS
+     ============================================ --}}
+@push('scripts')
+    {!! $pieChart->renderChartJsLibrary() !!}
+    {!! $pieChart->renderJs() !!}
+    {!! $barChart->renderJs() !!}
+@endpush
+
+{{-- ============================================
+     CHART CONTAINER STYLES
+     ============================================ --}}
+@push('styles')
+<style>
+    .chart-container {
+        position: relative;
+        height: 300px;
+        width: 100%;
+        margin: 10px 0;
+    }
+    
+    .chart-container canvas {
+        max-height: 300px;
+        max-width: 100%;
+    }
+    
+    /* Responsive chart adjustments */
+    @media (max-width: 768px) {
+        .chart-container {
+            height: 250px;
+        }
+    }
+</style>
+@endpush

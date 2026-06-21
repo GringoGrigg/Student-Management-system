@@ -5,16 +5,17 @@
 // ============================================
 // Purpose: Handles all student-related operations
 // Includes CRUD, search, filter, pagination, soft delete
-// Now with role-based access control:
+// Role-based access control:
 // - Admin: Full access to all students
 // - Student: Only their own profile (view and edit)
+// WORKING IMAGE UPLOAD - No GD/Imagick required
 // ============================================
 
 namespace App\Http\Controllers;
 
 use App\Models\Student;
 use Illuminate\Http\Request;
-use Illuminate\Support\Facades\Auth; // 👈 ADDED: For role checking
+use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Storage;
 
 class StudentController extends Controller
@@ -33,47 +34,27 @@ class StudentController extends Controller
         // ============================================
         // ROLE-BASED ACCESS CONTROL
         // ============================================
-        // Get the currently authenticated user
-        // ============================================
         $user = Auth::user();
 
-        // ============================================
-        // CHECK: If user is a student
-        // ============================================
         // Students cannot view the student list
-        // They can only see their own profile
-        // ============================================
         if ($user->isStudent()) {
-            // Check if student has a linked student record
             if ($user->student) {
-                // Redirect student to their own profile
                 return redirect()->route('students.show', $user->student->id)
                     ->with('info', 'You can only view your own profile.');
-            } else {
-                // No student profile found - logout and redirect to login
-                Auth::logout();
-                return redirect()->route('login')
-                    ->with('error', 'No student profile found. Please contact admin.');
             }
+            Auth::logout();
+            return redirect()->route('login')
+                ->with('error', 'No student profile found. Please contact admin.');
         }
 
         // ============================================
         // ADMIN ACCESS: Full student list
         // ============================================
-        // Only admins can view all students
-        // ============================================
-
-        // Start building the database query
         $query = Student::query();
         
-        // ===== SEARCH FUNCTIONALITY =====
-        // Check if user entered a search term
+        // SEARCH FUNCTIONALITY
         if ($request->filled('search')) {
             $search = $request->search;
-            
-            // Search in first_name, last_name, and email fields
-            // Using 'LIKE' with % wildcards for partial matching
-            // Using a closure with 'orWhere' to search multiple columns
             $query->where(function($q) use ($search) {
                 $q->where('first_name', 'LIKE', "%{$search}%")
                   ->orWhere('last_name', 'LIKE', "%{$search}%")
@@ -81,97 +62,60 @@ class StudentController extends Controller
             });
         }
         
-        // ===== COURSE FILTER =====
-        // Check if user selected a specific course
+        // COURSE FILTER
         if ($request->filled('course')) {
-            // Filter students by the selected course
             $query->where('course', $request->course);
         }
         
-        // ===== STATUS FILTER =====
-        // Check if user selected a specific status
+        // STATUS FILTER
         if ($request->filled('status')) {
-            // Filter students by the selected status
             $query->where('status', $request->status);
         }
         
-        // ===== ORDERING & PAGINATION =====
-        // 'latest()' orders by created_at descending (newest first)
-        // 'paginate(10)' shows 10 students per page with pagination links
+        // ORDERING & PAGINATION (10 per page)
         $students = $query->latest()->paginate(10);
-        
-        // ===== GET DISTINCT COURSES FOR FILTER DROPDOWN =====
-        // 'distinct()' gets unique values
-        // 'pluck('course')' extracts just the course column
-        // This automatically populates the course filter dropdown
         $courses = Student::distinct()->pluck('course');
         
-        // Return the view with both students and courses data
-        // 'compact()' creates an array: ['students' => $students, 'courses' => $courses]
         return view('students.index', compact('students', 'courses'));
     }
 
     /**
      * Show the form for creating a new student.
-     * 
-     * ADMIN ONLY: Students cannot create new student records
+     * ADMIN ONLY
      * 
      * URL: GET /students/create
-     * Access: Requires authentication (admin only)
      */
     public function create()
     {
-        // ============================================
-        // ROLE-BASED ACCESS CONTROL
-        // ============================================
-        // Only admins can create new students
-        // ============================================
-        $user = Auth::user();
-        
-        if ($user->isStudent()) {
+        if (Auth::user()->isStudent()) {
             return redirect()->route('dashboard')
                 ->with('error', 'Students cannot create new student records.');
         }
-
-        // Admin can access the create form
         return view('students.create');
     }
 
     /**
-     * Store a newly created student in the database.
-     * 
-     * ADMIN ONLY: Students cannot create new student records
+     * Store a newly created student with WORKING image upload.
+     * ADMIN ONLY
      * 
      * URL: POST /students
-     * Access: Requires authentication (admin only)
+     * 
+     * NOTE: This uses Laravel's built-in Storage facade.
+     * No GD or Imagick required - works on any PHP installation.
      */
     public function store(Request $request)
     {
         // ============================================
         // ROLE-BASED ACCESS CONTROL
         // ============================================
-        // Only admins can store new students
-        // ============================================
-        $user = Auth::user();
-        
-        if ($user->isStudent()) {
+        if (Auth::user()->isStudent()) {
             return redirect()->route('dashboard')
                 ->with('error', 'Students cannot create new student records.');
         }
 
         // ============================================
-        // VALIDATION RULES
+        // VALIDATION
         // ============================================
-        // 'required' - field must be present
-        // 'string' - must be text
-        // 'max:100' - maximum 100 characters
-        // 'email' - must be valid email format
-        // 'unique:students,email' - email must not exist in students table
-        // 'nullable' - field is optional
-        // 'in:Male,Female,Other' - must be one of these values
-        // 'image' - uploaded file must be an image
-        // 'mimes:jpeg,png,jpg,gif' - allowed image formats
-        // 'max:2048' - maximum file size 2MB (in kilobytes)
         $request->validate([
             'first_name' => 'required|string|max:100',
             'last_name' => 'required|string|max:100',
@@ -181,38 +125,34 @@ class StudentController extends Controller
             'date_of_birth' => 'required|date',
             'course' => 'required|string|max:150',
             'status' => 'required|in:Active,Inactive,Graduated',
-            'photo' => 'nullable|image|mimes:jpeg,png,jpg,gif|max:2048',
+            'photo' => 'nullable|image|mimes:jpeg,png,jpg,gif,webp|max:2048',
         ]);
 
-        // Get all validated data
         $data = $request->all();
 
-        // ===== IMAGE UPLOAD HANDLING =====
-        // Check if user uploaded a file
+        // ============================================
+        // WORKING IMAGE UPLOAD - NO PROCESSING
+        // ============================================
+        // This uses Laravel's built-in Storage facade
+        // No GD or Imagick required - works on any PHP installation
+        // ============================================
         if ($request->hasFile('photo')) {
-            // Get the uploaded file
             $file = $request->file('photo');
             
-            // Create unique filename using timestamp + original name
-            // Example: 1234567890_profile.jpg
-            $filename = time() . '_' . $file->getClientOriginalName();
+            // Create unique filename with timestamp
+            // Remove special characters for safety
+            $filename = time() . '_' . preg_replace('/[^a-zA-Z0-9.]/', '_', $file->getClientOriginalName());
             
-            // Store the file in storage/app/public/student_photos directory
-            // 'public' disk means files will be accessible from the web
+            // Store the file - this is the simplest working method
             $file->storeAs('public/student_photos', $filename);
             
-            // Add the filename to the data array for database storage
+            // Save filename to database
             $data['photo'] = $filename;
         }
 
         // ===== CREATE STUDENT =====
-        // 'Student::create()' inserts a new record into the database
-        // Only fields in $fillable are allowed (mass assignment protection)
         Student::create($data);
 
-        // ===== REDIRECT WITH SUCCESS MESSAGE =====
-        // Redirect to the student list page
-        // '->with()' stores a flash message in the session (only available for one request)
         return redirect()->route('students.index')
             ->with('success', 'Student created successfully!');
     }
@@ -224,38 +164,18 @@ class StudentController extends Controller
      * STUDENT: Can only view their own profile
      * 
      * URL: GET /students/{id}
-     * Access: Requires authentication
      */
     public function show(Student $student)
     {
-        // ============================================
-        // ROLE-BASED ACCESS CONTROL
-        // ============================================
-        // Get the current user
-        // ============================================
         $user = Auth::user();
-
-        // ============================================
-        // CHECK: If user is a student
-        // ============================================
-        // Students can only view their own profile
-        // Check if the student being viewed belongs to the current user
-        // ============================================
+        
         if ($user->isStudent()) {
-            // Check if the student record belongs to this user
-            if ($user->student && $user->student->id === $student->id) {
-                // Student is viewing their own profile - allowed
-                return view('students.show', compact('student'));
-            } else {
-                // Student is trying to view another student's profile - denied
+            if (!$user->student || $user->student->id !== $student->id) {
                 return redirect()->route('dashboard')
                     ->with('error', 'You can only view your own profile.');
             }
         }
 
-        // ============================================
-        // ADMIN ACCESS: Can view any student
-        // ============================================
         return view('students.show', compact('student'));
     }
 
@@ -266,77 +186,43 @@ class StudentController extends Controller
      * STUDENT: Can only edit their own profile
      * 
      * URL: GET /students/{id}/edit
-     * Access: Requires authentication
      */
     public function edit(Student $student)
     {
-        // ============================================
-        // ROLE-BASED ACCESS CONTROL
-        // ============================================
-        // Get the current user
-        // ============================================
         $user = Auth::user();
-
-        // ============================================
-        // CHECK: If user is a student
-        // ============================================
-        // Students can only edit their own profile
-        // ============================================
+        
         if ($user->isStudent()) {
-            // Check if the student record belongs to this user
             if (!$user->student || $user->student->id !== $student->id) {
-                // Student is trying to edit another student's profile - denied
                 return redirect()->route('dashboard')
                     ->with('error', 'You can only edit your own profile.');
             }
-            // Student can edit their own profile
-            return view('students.edit', compact('student'));
         }
 
-        // ============================================
-        // ADMIN ACCESS: Can edit any student
-        // ============================================
         return view('students.edit', compact('student'));
     }
 
     /**
-     * Update the specified student in the database.
+     * Update the specified student with WORKING image upload.
      * 
      * ADMIN: Can update any student
      * STUDENT: Can only update their own profile
      * 
      * URL: PUT/PATCH /students/{id}
-     * Access: Requires authentication
      */
     public function update(Request $request, Student $student)
     {
-        // ============================================
-        // ROLE-BASED ACCESS CONTROL
-        // ============================================
-        // Get the current user
-        // ============================================
         $user = Auth::user();
-
-        // ============================================
-        // CHECK: If user is a student
-        // ============================================
-        // Students can only update their own profile
-        // ============================================
+        
         if ($user->isStudent()) {
-            // Check if the student record belongs to this user
             if (!$user->student || $user->student->id !== $student->id) {
-                // Student is trying to update another student's profile - denied
                 return redirect()->route('dashboard')
                     ->with('error', 'You can only update your own profile.');
             }
         }
 
         // ============================================
-        // VALIDATION RULES
+        // VALIDATION
         // ============================================
-        // Special email rule: 'unique:students,email,' . $student->id
-        // This means: "email must be unique, but ignore this student's own email"
-        // This allows students to keep their existing email
         $request->validate([
             'first_name' => 'required|string|max:100',
             'last_name' => 'required|string|max:100',
@@ -346,86 +232,107 @@ class StudentController extends Controller
             'date_of_birth' => 'required|date',
             'course' => 'required|string|max:150',
             'status' => 'required|in:Active,Inactive,Graduated',
-            'photo' => 'nullable|image|mimes:jpeg,png,jpg,gif|max:2048',
+            'photo' => 'nullable|image|mimes:jpeg,png,jpg,gif,webp|max:2048',
         ]);
 
-        // Get validated data
         $data = $request->all();
 
-        // ===== IMAGE UPDATE HANDLING =====
-        // Check if user uploaded a new photo
+        // ============================================
+        // WORKING IMAGE UPDATE
+        // ============================================
         if ($request->hasFile('photo')) {
             // ===== DELETE OLD PHOTO =====
-            // Check if student has an existing photo
             if ($student->photo) {
-                // Build the full path to the old photo
-                $oldPhotoPath = storage_path('app/public/student_photos/' . $student->photo);
-                
-                // Check if the file exists and delete it
-                // This prevents unused files from filling up storage
-                if (file_exists($oldPhotoPath)) {
-                    unlink($oldPhotoPath); // PHP function to delete file
+                $oldPath = 'public/student_photos/' . $student->photo;
+                if (Storage::exists($oldPath)) {
+                    Storage::delete($oldPath);
                 }
             }
             
             // ===== UPLOAD NEW PHOTO =====
             $file = $request->file('photo');
-            $filename = time() . '_' . $file->getClientOriginalName();
+            $filename = time() . '_' . preg_replace('/[^a-zA-Z0-9.]/', '_', $file->getClientOriginalName());
+            
+            // Store the file
             $file->storeAs('public/student_photos', $filename);
             $data['photo'] = $filename;
         }
 
         // ===== UPDATE STUDENT =====
-        // 'update()' executes: UPDATE students SET ... WHERE id = ?
-        // Only updates fields in $fillable
         $student->update($data);
 
         // ============================================
         // ROLE-BASED REDIRECTION
         // ============================================
-        // Redirect based on user role
-        // ============================================
         if ($user->isStudent()) {
-            // Student: Redirect back to their own profile with success message
             return redirect()->route('students.show', $student->id)
                 ->with('success', 'Your profile has been updated successfully!');
         }
 
-        // Admin: Redirect to student list with success message
         return redirect()->route('students.index')
             ->with('success', 'Student updated successfully!');
     }
 
     /**
-     * Remove the specified student from the database (Soft Delete).
-     * 
-     * ADMIN ONLY: Students cannot delete student records
+     * Remove the specified student (Soft Delete).
+     * Also deletes the student's photo file.
+     * ADMIN ONLY
      * 
      * URL: DELETE /students/{id}
-     * Access: Requires authentication (admin only)
      */
     public function destroy(Student $student)
     {
-        // ============================================
-        // ROLE-BASED ACCESS CONTROL
-        // ============================================
-        // Only admins can delete students
-        // ============================================
-        $user = Auth::user();
-        
-        if ($user->isStudent()) {
+        if (Auth::user()->isStudent()) {
             return redirect()->route('dashboard')
                 ->with('error', 'Students cannot delete student records.');
         }
 
-        // ===== SOFT DELETE =====
-        // 'delete()' with SoftDeletes trait will set 'deleted_at' timestamp
-        // The record is NOT permanently removed from the database
-        // It can be restored later using 'restore()'
+        // Delete photo
+        if ($student->photo) {
+            $path = 'public/student_photos/' . $student->photo;
+            if (Storage::exists($path)) {
+                Storage::delete($path);
+            }
+        }
+
         $student->delete();
 
         return redirect()->route('students.index')
             ->with('success', 'Student deleted successfully!');
+    }
+
+    /**
+     * Delete the student's photo only (keep the student record).
+     * 
+     * ADMIN: Can delete any student's photo
+     * STUDENT: Can delete their own photo
+     * 
+     * URL: DELETE /students/{student}/photo
+     */
+    public function deletePhoto(Student $student)
+    {
+        $user = Auth::user();
+        
+        if ($user->isStudent()) {
+            if (!$user->student || $user->student->id !== $student->id) {
+                return redirect()->back()
+                    ->with('error', 'You cannot delete this photo.');
+            }
+        }
+
+        if ($student->photo) {
+            $path = 'public/student_photos/' . $student->photo;
+            if (Storage::exists($path)) {
+                Storage::delete($path);
+            }
+            $student->update(['photo' => null]);
+            
+            return redirect()->back()
+                ->with('success', 'Photo deleted successfully!');
+        }
+
+        return redirect()->back()
+            ->with('error', 'No photo to delete.');
     }
 
     // ============================================
@@ -436,107 +343,64 @@ class StudentController extends Controller
     
     /**
      * Display all soft-deleted (trashed) students.
-     * 
-     * ADMIN ONLY: Students cannot access trash
+     * ADMIN ONLY
      * 
      * URL: GET /students/trashed
-     * Access: Requires authentication (admin only)
      */
     public function trashed()
     {
-        // ============================================
-        // ROLE-BASED ACCESS CONTROL
-        // ============================================
-        // Only admins can view trashed students
-        // ============================================
-        $user = Auth::user();
-        
-        if ($user->isStudent()) {
+        if (Auth::user()->isStudent()) {
             return redirect()->route('dashboard')
                 ->with('error', 'Students cannot access trash.');
         }
 
-        // ===== ONLY TRASHED STUDENTS =====
-        // 'onlyTrashed()' retrieves only records where 'deleted_at' is NOT NULL
-        // These are students that have been soft-deleted
         $students = Student::onlyTrashed()->paginate(10);
-        
-        // Return the trashed view with the deleted students
         return view('students.trashed', compact('students'));
     }
 
     /**
      * Restore a soft-deleted student.
-     * 
-     * ADMIN ONLY: Students cannot restore students
+     * ADMIN ONLY
      * 
      * URL: PATCH /students/{id}/restore
-     * Access: Requires authentication (admin only)
      */
     public function restore($id)
     {
-        // ============================================
-        // ROLE-BASED ACCESS CONTROL
-        // ============================================
-        // Only admins can restore students
-        // ============================================
-        $user = Auth::user();
-        
-        if ($user->isStudent()) {
+        if (Auth::user()->isStudent()) {
             return redirect()->route('dashboard')
                 ->with('error', 'Students cannot restore student records.');
         }
 
-        // ===== FIND AND RESTORE =====
-        // 'onlyTrashed()' finds the record even though it's soft-deleted
-        // 'findOrFail()' throws 404 if student not found
         $student = Student::onlyTrashed()->findOrFail($id);
-        
-        // 'restore()' sets 'deleted_at' back to NULL
-        // The student becomes visible again in normal queries
         $student->restore();
         
-        // Redirect to student list with success message
         return redirect()->route('students.index')
             ->with('success', 'Student restored successfully!');
     }
 
     /**
      * Permanently delete a student (Force Delete).
-     * 
-     * ADMIN ONLY: Students cannot permanently delete students
+     * Also deletes the student's photo file.
+     * ADMIN ONLY
      * 
      * URL: DELETE /students/{id}/force-delete
-     * Access: Requires authentication (admin only)
      */
     public function forceDelete($id)
     {
-        // ============================================
-        // ROLE-BASED ACCESS CONTROL
-        // ============================================
-        // Only admins can force delete students
-        // ============================================
-        $user = Auth::user();
-        
-        if ($user->isStudent()) {
+        if (Auth::user()->isStudent()) {
             return redirect()->route('dashboard')
                 ->with('error', 'Students cannot permanently delete student records.');
         }
 
-        // Find the trashed student
         $student = Student::onlyTrashed()->findOrFail($id);
         
-        // ===== DELETE PHOTO =====
-        // Delete the student's photo from storage if it exists
         if ($student->photo) {
-            $photoPath = storage_path('app/public/student_photos/' . $student->photo);
-            if (file_exists($photoPath)) {
-                unlink($photoPath);
+            $path = 'public/student_photos/' . $student->photo;
+            if (Storage::exists($path)) {
+                Storage::delete($path);
             }
         }
         
-        // 'forceDelete()' permanently removes the record from the database
-        // This cannot be undone!
         $student->forceDelete();
         
         return redirect()->route('students.trashed')

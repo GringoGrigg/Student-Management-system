@@ -246,8 +246,8 @@
            ONLINE STATUS INDICATOR
            ============================================ */
         .online-indicator {
-            width: 16px;
-            height: 16px;
+            width: 12px;
+            height: 12px;
             background: #2ecc71;
             border-radius: 50%;
             display: inline-block;
@@ -266,6 +266,30 @@
             100% {
                 box-shadow: 0 0 0 0 rgba(46, 204, 113, 0);
             }
+        }
+        
+        /* ============================================
+           CHART CONTAINER STYLES
+           ============================================ */
+        .chart-container {
+            position: relative;
+            height: 300px;
+            width: 100%;
+            margin: 10px 0;
+        }
+        
+        .chart-container canvas {
+            max-height: 300px;
+            max-width: 100%;
+        }
+        
+        /* Chart card hover effect */
+        .card .chart-container {
+            transition: all 0.3s ease;
+        }
+        
+        .card:hover .chart-container {
+            transform: scale(1.01);
         }
         
         /* ============================================
@@ -290,6 +314,15 @@
             .navbar-custom .nav-link {
                 padding: 6px 12px;
                 font-size: 14px;
+            }
+            
+            /* Chart responsive adjustments */
+            .chart-container {
+                height: 250px;
+            }
+            
+            .chart-container canvas {
+                max-height: 250px;
             }
         }
     </style>

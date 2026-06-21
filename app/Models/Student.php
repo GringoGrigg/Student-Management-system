@@ -6,13 +6,15 @@
 // Purpose: Represents a student in the system
 // Handles student data, relationships, and business logic
 // Now linked to User model for role-based access
+// Includes improved image handling with thumbnails and cleanup
 // ============================================
 
 namespace App\Models;
 
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
-use Illuminate\Database\Eloquent\SoftDeletes; // 👈 ADD THIS for soft delete functionality
+use Illuminate\Database\Eloquent\SoftDeletes;
+use Illuminate\Support\Facades\Storage; // For file operations
 
 class Student extends Model
 {
@@ -34,7 +36,7 @@ class Student extends Model
         'course',          // Course name
         'status',          // Active, Inactive, or Graduated
         'photo',           // Profile photo filename
-        'user_id',         // 👈 ADDED: Links student to User account for role-based access
+        'user_id',         // Links student to User account for role-based access
     ];
 
     // ===== DATE CASTING =====
@@ -94,28 +96,68 @@ class Student extends Model
     }
 
     /**
-     * Get the photo URL for the student.
+     * Get the photo URL for the student with improved handling.
      * 
      * Accessor: $student->photo_url
      * 
-     * Returns the full URL to the student's profile photo
-     * If no photo exists, generates an avatar from the student's name
+     * Returns:
+     * - Uploaded photo URL if exists and file is present
+     * - Default avatar with name initials if no photo
+     * - Handles missing files gracefully
      * 
      * Usage: {{ $student->photo_url }}
      */
     public function getPhotoUrlAttribute()
     {
-        // Check if student has a photo
+        // Check if student has a photo filename stored
         if ($this->photo) {
-            // Return the full URL using Laravel's asset() helper
-            // asset() generates: http://yourdomain.com/storage/student_photos/filename.jpg
-            return asset('storage/student_photos/' . $this->photo);
+            // Check if the file actually exists in storage
+            // This prevents broken image links
+            $path = 'public/student_photos/' . $this->photo;
+            if (Storage::exists($path)) {
+                // Return the full URL using Laravel's asset() helper
+                // asset() generates: http://yourdomain.com/storage/student_photos/filename.jpg
+                return asset('storage/student_photos/' . $this->photo);
+            }
         }
         
-        // Return default avatar if no photo exists
+        // Return default avatar if no photo exists or file is missing
         // Using a free avatar service (ui-avatars.com)
-        // Generates: https://ui-avatars.com/api/?name=John+Doe&size=100
-        return 'https://ui-avatars.com/api/?name=' . urlencode($this->full_name) . '&size=100';
+        // Generates: https://ui-avatars.com/api/?name=John+Doe&size=200&background=3498db&color=ffffff
+        // - size=200: Creates a 200x200 pixel avatar
+        // - background=3498db: Blue background
+        // - color=ffffff: White text
+        // - bold=true: Bold text for better readability
+        return 'https://ui-avatars.com/api/?name=' . urlencode($this->full_name) . 
+               '&size=200&background=3498db&color=ffffff&bold=true';
+    }
+
+    /**
+     * Get the thumbnail photo URL (smaller version).
+     * 
+     * Accessor: $student->thumbnail_url
+     * 
+     * Useful for list views where you want smaller images
+     * This improves page load speed in tables
+     * 
+     * Usage: {{ $student->thumbnail_url }}
+     */
+    public function getThumbnailUrlAttribute()
+    {
+        // Check if student has a photo
+        if ($this->photo) {
+            // Check if file exists
+            $path = 'public/student_photos/' . $this->photo;
+            if (Storage::exists($path)) {
+                // Return the full URL
+                return asset('storage/student_photos/' . $this->photo);
+            }
+        }
+        
+        // Return smaller avatar for thumbnails
+        // size=50 creates a 50x50 pixel avatar
+        return 'https://ui-avatars.com/api/?name=' . urlencode($this->full_name) . 
+               '&size=50&background=3498db&color=ffffff&bold=true';
     }
 
     /**
@@ -146,6 +188,23 @@ class Student extends Model
     {
         // Format the date as "January 15, 2000"
         return $this->date_of_birth->format('F d, Y');
+    }
+
+    /**
+     * Check if the student has a photo.
+     * 
+     * Accessor: $student->has_photo
+     * 
+     * Returns true if student has a valid photo file
+     * 
+     * Usage: @if($student->has_photo) ... @endif
+     */
+    public function getHasPhotoAttribute()
+    {
+        if (!$this->photo) {
+            return false;
+        }
+        return Storage::exists('public/student_photos/' . $this->photo);
     }
 
     // ============================================
@@ -222,6 +281,60 @@ class Student extends Model
         return $query->where('user_id', $userId);
     }
 
+    /**
+     * Scope for students with photos.
+     * 
+     * Allows: Student::withPhoto()->get()
+     * 
+     * Returns only students who have a photo
+     * 
+     * Usage: $studentsWithPhotos = Student::withPhoto()->get();
+     */
+    public function scopeWithPhoto($query)
+    {
+        return $query->whereNotNull('photo');
+    }
+
+    /**
+     * Scope for students without photos.
+     * 
+     * Allows: Student::withoutPhoto()->get()
+     * 
+     * Returns only students without a photo
+     * 
+     * Usage: $studentsWithoutPhotos = Student::withoutPhoto()->get();
+     */
+    public function scopeWithoutPhoto($query)
+    {
+        return $query->whereNull('photo');
+    }
+
+    // ============================================
+    // HELPER METHODS
+    // ============================================
+    // These are additional utility methods
+    // ============================================
+
+    /**
+     * Delete the student's photo file.
+     * 
+     * Returns true if photo was deleted, false otherwise
+     * 
+     * @return bool
+     */
+    public function deletePhoto()
+    {
+        if ($this->photo) {
+            $path = 'public/student_photos/' . $this->photo;
+            if (Storage::exists($path)) {
+                Storage::delete($path);
+                $this->update(['photo' => null]);
+                return true;
+            }
+        }
+        return false;
+    }
+
     // ============================================
     // BOOT METHOD
     // ============================================
@@ -266,14 +379,48 @@ class Student extends Model
         });
 
         /**
-         * Deleting Event Listener
+         * Deleted Event Listener (Soft Delete)
          * 
-         * This runs when a student is deleted (soft delete)
-         * Can be used to perform cleanup actions
+         * THIS IS NEW: Runs when a student is soft-deleted
+         * Automatically deletes the student's photo file from storage
+         * Prevents orphaned files from accumulating
          */
-        static::deleting(function ($student) {
-            // If you need to do something when a student is deleted
-            // For example: delete associated files, log the action, etc.
+        static::deleted(function ($student) {
+            // Delete the student's photo when the student is deleted
+            if ($student->photo) {
+                $path = 'public/student_photos/' . $student->photo;
+                if (Storage::exists($path)) {
+                    Storage::delete($path);
+                }
+            }
+        });
+
+        /**
+         * Force Deleted Event Listener
+         * 
+         * THIS IS NEW: Runs when a student is permanently deleted
+         * Also deletes the photo file
+         */
+        static::forceDeleted(function ($student) {
+            // Delete the student's photo when force deleted
+            if ($student->photo) {
+                $path = 'public/student_photos/' . $student->photo;
+                if (Storage::exists($path)) {
+                    Storage::delete($path);
+                }
+            }
+        });
+
+        /**
+         * Restored Event Listener
+         * 
+         * THIS IS NEW: Runs when a student is restored from soft delete
+         * Note: Photo file is not restored automatically
+         */
+        static::restored(function ($student) {
+            // When restoring a student, you might want to handle the photo
+            // But since the photo file is deleted on soft delete, it won't be restored
+            // You could log this or handle it differently
         });
     }
 }

@@ -108,6 +108,19 @@ Route::middleware(['auth'])->group(function () {
     Route::resource('students', StudentController::class);
     
     // ============================================
+    // PHOTO DELETE ROUTE
+    // ============================================
+    // URL: DELETE /students/{student}/photo
+    // Controller: StudentController@deletePhoto
+    // Route Name: students.photo.delete
+    // Purpose: Delete only the student's photo (keep the student)
+    // Access:
+    //   - Admin: Can delete any student's photo
+    //   - Student: Can only delete their own photo
+    // ============================================
+    Route::delete('students/{student}/photo', [StudentController::class, 'deletePhoto'])->name('students.photo.delete');
+    
+    // ============================================
     // SOFT DELETE / TRASH ROUTES
     // ============================================
     // These routes handle soft deleted (trashed) students
@@ -167,14 +180,15 @@ Route::middleware(['auth'])->group(function () {
 // - /verify-email        → Email verification
 // 
 // PROTECTED ROUTES (Login Required):
-// - /dashboard           → Admin dashboard (Admin) or Profile (Student)
-// - /students            → Student list (Admin) or Profile (Student)
-// - /students/create     → Create student (Admin only)
-// - /students/{id}       → View student (Admin) or Profile (Student)
-// - /students/{id}/edit  → Edit student (Admin) or Profile (Student)
-// - /students/trashed    → View trashed students (Admin only)
-// - /students/{id}/restore → Restore student (Admin only)
-// - /students/{id}/force-delete → Permanent delete (Admin only)
+// - /dashboard                    → Admin dashboard (Admin) or Profile (Student)
+// - /students                     → Student list (Admin) or Profile (Student)
+// - /students/create              → Create student (Admin only)
+// - /students/{id}                → View student (Admin) or Profile (Student)
+// - /students/{id}/edit           → Edit student (Admin) or Profile (Student)
+// - /students/{id}/photo          → Delete photo (Admin or own profile)
+// - /students/trashed             → View trashed students (Admin only)
+// - /students/{id}/restore        → Restore student (Admin only)
+// - /students/{id}/force-delete   → Permanent delete (Admin only)
 // 
 // ============================================
 // ROUTE NAMING CONVENTIONS
@@ -189,15 +203,16 @@ Route::middleware(['auth'])->group(function () {
 // ACCESS CONTROL MATRIX
 // ============================================
 // 
-// | Route              | Admin | Student |
-// |--------------------|-------|---------|
-// | /dashboard         | ✅    | ❌ → Profile |
-// | /students          | ✅    | ❌ → Profile |
-// | /students/create   | ✅    | ❌ → Error |
-// | /students/{id}     | ✅    | ✅ (own only) |
-// | /students/{id}/edit| ✅    | ✅ (own only) |
-// | /students/trashed  | ✅    | ❌ → Error |
-// | /students/{id}/restore | ✅ | ❌ → Error |
+// | Route                     | Admin | Student |
+// |---------------------------|-------|---------|
+// | /dashboard                | ✅    | ❌ → Profile |
+// | /students                 | ✅    | ❌ → Profile |
+// | /students/create          | ✅    | ❌ → Error |
+// | /students/{id}            | ✅    | ✅ (own only) |
+// | /students/{id}/edit       | ✅    | ✅ (own only) |
+// | /students/{id}/photo      | ✅    | ✅ (own only) |
+// | /students/trashed         | ✅    | ❌ → Error |
+// | /students/{id}/restore    | ✅    | ❌ → Error |
 // | /students/{id}/force-delete | ✅ | ❌ → Error |
 // 
 // ============================================

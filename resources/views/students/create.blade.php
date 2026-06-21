@@ -131,29 +131,183 @@
                         </div>
                     </div>
 
-                    {{-- PHOTO UPLOAD FIELD --}}
-                    <div class="mb-3">
-                        <label for="photo" class="form-label">Profile Photo</label>
-                        <input type="file" 
-                               class="form-control @error('photo') is-invalid @enderror" 
-                               id="photo" 
-                               name="photo" 
-                               accept="image/*">
-                        <small class="text-muted">
-                            <i class="bi bi-info-circle"></i> Max size: 2MB. Allowed: jpeg, png, jpg, gif
-                        </small>
+                    {{-- ============================================
+                         PHOTO UPLOAD WITH PREVIEW
+                         ============================================ --}}
+                    <div class="mb-4">
+                        <label class="form-label fw-semibold">
+                            <i class="bi bi-image"></i> Profile Photo
+                        </label>
+                        
+                        {{-- Image Preview Container --}}
+                        <div class="text-center mb-3">
+                            <div id="photoPreviewContainer" class="d-none">
+                                <img id="photoPreview" 
+                                     src="#" 
+                                     alt="Photo Preview" 
+                                     class="img-fluid rounded-circle border border-success border-3"
+                                     style="width: 150px; height: 150px; object-fit: cover;">
+                                <br>
+                                <small class="text-success">
+                                    <i class="bi bi-check-circle"></i> Preview
+                                </small>
+                            </div>
+                            <div id="photoPlaceholder">
+                                <div style="width: 150px; height: 150px; border-radius: 50%; background: #ecf0f1; display: flex; align-items: center; justify-content: center; margin: 0 auto; border: 3px dashed #bdc3c7;">
+                                    <span style="font-size: 60px; color: #95a5a6;">📷</span>
+                                </div>
+                                <small class="text-muted">No photo selected</small>
+                            </div>
+                        </div>
+                        
+                        {{-- File Input with Drag & Drop Support --}}
+                        <div class="input-group">
+                            <span class="input-group-text bg-light">
+                                <i class="bi bi-cloud-upload"></i>
+                            </span>
+                            <input type="file" 
+                                   class="form-control @error('photo') is-invalid @enderror" 
+                                   id="photo" 
+                                   name="photo" 
+                                   accept="image/*"
+                                   onchange="previewImage(event)"
+                                   aria-describedby="photoHelp">
+                        </div>
+                        
+                        <div id="photoHelp" class="form-text">
+                            <i class="bi bi-info-circle text-primary"></i> 
+                            <strong>Max size:</strong> 2MB | 
+                            <strong>Allowed:</strong> jpeg, png, jpg, gif, webp
+                            <br>
+                            <i class="bi bi-check-circle text-success"></i> 
+                            Images will be automatically resized to 400x400px for optimal display
+                        </div>
+                        
+                        {{-- File size warning --}}
+                        <div id="fileSizeWarning" class="alert alert-warning mt-2 d-none">
+                            <i class="bi bi-exclamation-triangle"></i>
+                            File size exceeds 2MB limit. Please select a smaller image.
+                        </div>
+                        
                         @error('photo')
-                            <div class="invalid-feedback">{{ $message }}</div>
+                            <div class="invalid-feedback d-block">
+                                <i class="bi bi-exclamation-circle"></i> {{ $message }}
+                            </div>
                         @enderror
                     </div>
 
                     <div class="d-flex justify-content-between">
-                        <a href="{{ route('students.index') }}" class="btn btn-secondary">Cancel</a>
-                        <button type="submit" class="btn btn-primary">Submit</button>
+                        <a href="{{ route('students.index') }}" class="btn btn-secondary">
+                            <i class="bi bi-arrow-left"></i> Cancel
+                        </a>
+                        <button type="submit" class="btn btn-primary">
+                            <i class="bi bi-plus-circle"></i> Submit
+                        </button>
                     </div>
                 </form>
             </div>
         </div>
     </div>
 </div>
-@endsection
+
+{{-- ============================================
+     IMAGE PREVIEW JAVASCRIPT
+     ============================================ --}}
+@push('scripts')
+<script>
+    function previewImage(event) {
+        const reader = new FileReader();
+        const file = event.target.files[0];
+        const preview = document.getElementById('photoPreview');
+        const placeholder = document.getElementById('photoPlaceholder');
+        const container = document.getElementById('photoPreviewContainer');
+        const warning = document.getElementById('fileSizeWarning');
+        
+        // Reset warning
+        warning.classList.add('d-none');
+        
+        if (file) {
+            // ============================================
+            // VALIDATION: Check if file is an image
+            // ============================================
+            if (!file.type.startsWith('image/')) {
+                alert('❌ Please select a valid image file.');
+                event.target.value = '';
+                return;
+            }
+            
+            // ============================================
+            // VALIDATION: Check file size (2MB max)
+            // ============================================
+            if (file.size > 2 * 1024 * 1024) {
+                warning.classList.remove('d-none');
+                event.target.value = '';
+                return;
+            }
+            
+            // ============================================
+            // DISPLAY PREVIEW
+            // ============================================
+            reader.onload = function(e) {
+                preview.src = e.target.result;
+                container.classList.remove('d-none');
+                container.classList.add('d-block');
+                placeholder.classList.add('d-none');
+            };
+            
+            reader.readAsDataURL(file);
+        } else {
+            // ============================================
+            // RESET PREVIEW
+            // ============================================
+            container.classList.add('d-none');
+            container.classList.remove('d-block');
+            placeholder.classList.remove('d-none');
+        }
+    }
+    
+    // ============================================
+    // DRAG AND DROP SUPPORT
+    // ============================================
+    document.addEventListener('DOMContentLoaded', function() {
+        const dropArea = document.querySelector('.input-group');
+        
+        // Prevent default drag behaviors
+        ['dragenter', 'dragover', 'dragleave', 'drop'].forEach(eventName => {
+            dropArea.addEventListener(eventName, preventDefaults, false);
+        });
+        
+        function preventDefaults(e) {
+            e.preventDefault();
+            e.stopPropagation();
+        }
+        
+        // Highlight drop area when item is dragged over it
+        ['dragenter', 'dragover'].forEach(eventName => {
+            dropArea.addEventListener(eventName, () => {
+                dropArea.classList.add('border-primary', 'bg-light');
+            }, false);
+        });
+        
+        ['dragleave', 'drop'].forEach(eventName => {
+            dropArea.addEventListener(eventName, () => {
+                dropArea.classList.remove('border-primary', 'bg-light');
+            }, false);
+        });
+        
+        // Handle dropped files
+        dropArea.addEventListener('drop', function(e) {
+            const dt = e.dataTransfer;
+            const files = dt.files;
+            const fileInput = document.getElementById('photo');
+            
+            if (files.length > 0) {
+                fileInput.files = files;
+                // Trigger change event to show preview
+                const event = new Event('change');
+                fileInput.dispatchEvent(event);
+            }
+        }, false);
+    });
+</script>
+@endpush
